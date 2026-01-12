@@ -33,7 +33,7 @@ const WhatsAppMockup = () => {
                   <img src={logo} alt="Coach AI" className="w-7 h-7 object-contain" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium text-white text-sm">Coach AI Gym</p>
+                  <p className="font-medium text-white text-sm">HeyMax.fit</p>
                   <p className="text-xs text-primary">online</p>
                 </div>
                 <div className="flex gap-4">

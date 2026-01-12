@@ -7,7 +7,7 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           {/* Company Info */}
           <div className="text-center md:text-left">
-            <h3 className="text-xl font-bold text-gradient mb-2">Coach AI Gym</h3>
+            <h3 className="text-xl font-bold text-gradient mb-2">HeyMax.fit</h3>
             <p className="text-sm text-muted-foreground">
               CNPJ: 00.000.000/0001-00
             </p>

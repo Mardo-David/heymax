@@ -38,7 +38,7 @@ const FAQSection = () => {
         >
           <h2 className="text-section mb-4">Perguntas Frequentes</h2>
           <p className="text-muted-foreground">
-            Tire suas dúvidas sobre o Coach AI Gym
+            Tire suas dúvidas sobre o Hey Max
           </p>
         </motion.div>
 
