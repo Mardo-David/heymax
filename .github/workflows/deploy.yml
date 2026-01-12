@@ -31,10 +31,13 @@ jobs:
 
       - name: Trust server host key
         run: |
+          set -e
           mkdir -p ~/.ssh
           ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy dist via rsync
         run: |
-          rsync -az --delete -e "ssh -p ${{ secrets.SSH_PORT }}" \
+          set -e
+          rsync -az --delete --no-perms --no-owner --no-group \
+            -e "ssh -p ${{ secrets.SSH_PORT }}" \
             dist/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/heymax/dist/
