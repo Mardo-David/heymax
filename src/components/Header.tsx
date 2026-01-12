@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
-import logoImage from "@/assets/logo-branco.png";
+import logoImage from "@/assets/HeyMaxfit.png";
 import { useState } from "react";
 
 const Header = () => {
