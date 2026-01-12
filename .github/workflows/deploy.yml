@@ -1,11 +1,11 @@
-name: Deploy Heymax
+name: Deploy Frontend
 
 on:
   push:
     branches: ["main"]
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -15,32 +15,26 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: "20"
+          cache: "npm"
 
-      - name: Install
+      - name: Install deps
         run: npm ci
 
       - name: Build
         run: npm run build
 
-      - name: Clean target dir
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            TARGET_DIR="/TROQUE_AQUI_PELA_SOURCE_DO_MOUNT"
-            mkdir -p "$TARGET_DIR"
-            rm -rf "$TARGET_DIR"/*
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Upload dist
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          source: "dist/*"
-          target: "/TROQUE_AQUI_PELA_SOURCE_DO_MOUNT"
+      - name: Trust server host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy dist via rsync
+        run: |
+          rsync -az --delete -e "ssh -p ${{ secrets.SSH_PORT }}" \
+            dist/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/heymax/dist/
