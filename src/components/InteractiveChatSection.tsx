@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 const demoConversations = [
   {
     role: "bot",
-    message: "Olá! Sou o Coach AI 🤖 Quer ver como eu falaria com seus alunos em risco?",
+    message: "Olá! Sou o Max 🤖 Quer ver como eu falaria com seus alunos em risco?",
     delay: 0,
   },
   {
@@ -86,7 +86,7 @@ const InteractiveChatSection = () => {
             Veja a IA <span className="text-gradient">em ação</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Simule uma conversa e descubra como o Coach AI interage com seus alunos.
+            Simule uma conversa e descubra como o Hey Max interage com seus alunos.
           </p>
         </motion.div>
 

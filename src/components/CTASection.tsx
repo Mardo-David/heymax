@@ -23,7 +23,7 @@ const CTASection = () => {
             Pronto para estancar o churn da sua academia?
           </h2>
           <p className="text-xl text-muted-foreground mb-8">
-            Se o Coach AI salvar apenas <strong className="text-primary">UM aluno por mês</strong>, ele já se paga.
+            Se o HeyMax salvar apenas <strong className="text-primary">UM aluno por mês</strong>, ele já se paga.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

@@ -81,7 +81,7 @@ const HeroSection = () => {
             >
               <Button variant="hero" size="xl" className="group">
                 <Play className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                Ver o Coach AI em Ação
+                Ver o Hey Max em Ação
               </Button>
               <Button variant="heroOutline" size="xl">
                 Agendar Demonstração

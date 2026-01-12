@@ -96,7 +96,7 @@ const LeadFormSection = () => {
               Agende sua <span className="text-gradient">demonstração gratuita</span>
             </h2>
             <p className="text-lg text-muted-foreground mb-8">
-              Preencha o formulário e nossa equipe entrará em contato para mostrar como o Coach AI pode revolucionar a retenção da sua academia.
+              Preencha o formulário e nossa equipe entrará em contato para mostrar como o Hey Max pode revolucionar a retenção da sua academia.
             </p>
 
             <div className="space-y-4">

@@ -28,7 +28,7 @@ const StickyCTA = () => {
         >
           <Button variant="hero" size="lg" className="w-full">
             <MessageCircle className="w-5 h-5" />
-            Ver Coach AI em Ação
+            Ver Hey Max em Ação
           </Button>
         </motion.div>
       )}

@@ -30,7 +30,7 @@ const WhatsAppMockup = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
                 <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
-                  <img src={logo} alt="Coach AI" className="w-7 h-7 object-contain" />
+                  <img src={logo} alt="HeyMax" className="w-7 h-7 object-contain" />
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-white text-sm">HeyMax.fit</p>

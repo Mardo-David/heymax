@@ -53,7 +53,7 @@ const SocialProofSection = () => {
               <blockquote className="text-xl md:text-2xl font-medium mb-6 leading-relaxed">
                 "Recuperei{" "}
                 <span className="text-primary font-bold">8 alunos na primeira semana</span>{" "}
-                com o Coach AI. Receita salva:{" "}
+                com o Hey Max. Receita salva:{" "}
                 <span className="text-primary font-bold">R$ 3.200,00/mês</span>"
               </blockquote>
               <div className="flex items-center gap-4">
