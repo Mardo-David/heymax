@@ -13,7 +13,7 @@ const steps = [
     number: "02",
     icon: MessageCircle,
     title: "Conversa Humanizada",
-    description: "Utilizando NLP avançado, o Coach AI mantém conversas empáticas e naturais que parecem vindas de um humano real.",
+    description: "Utilizando NLP avançado, o Hey Max mantém conversas empáticas e naturais que parecem vindas de um humano real.",
     highlight: "98% de taxa de abertura",
   },
   {

@@ -91,7 +91,7 @@ const SocialProofSection = () => {
           viewport={{ once: true }}
           className="text-center text-sm text-muted-foreground mt-8 max-w-2xl mx-auto"
         >
-          O Coach AI utiliza a <strong className="text-foreground">API oficial do WhatsApp Business</strong> para garantir criptografia e segurança total dos dados dos seus alunos.
+          O Hey Max utiliza a <strong className="text-foreground">API oficial do WhatsApp Business</strong> para garantir criptografia e segurança total dos dados dos seus alunos.
         </motion.p>
       </div>
     </section>

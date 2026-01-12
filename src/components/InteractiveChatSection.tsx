@@ -106,7 +106,7 @@ const InteractiveChatSection = () => {
                   <Bot className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-sm">Coach AI</h4>
+                  <h4 className="font-semibold text-sm">Hey Max</h4>
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                     Online agora

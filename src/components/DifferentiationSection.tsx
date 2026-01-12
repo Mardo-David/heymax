@@ -10,7 +10,7 @@ const differentiators = [
   {
     icon: Layers,
     title: "Não é substituição, é amplificação",
-    description: "Não troque seu sistema de gestão (ERP); o Coach AI se acopla a ele para resolver a retenção.",
+    description: "Não troque seu sistema de gestão (ERP); o Hey Max se acopla a ele para resolver a retenção.",
   },
   {
     icon: Clock,
