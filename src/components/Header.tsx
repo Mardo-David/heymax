@@ -17,7 +17,7 @@ const Header = () => {
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center gap-2"
           >
-            <img src={logoImage} alt="Coach AI Gym" className="h-10 w-auto" />
+            <img src={logoImage} alt="HeyMax.fit" className="h-10 w-auto" />
           </motion.div>
 
           {/* Desktop Navigation */}

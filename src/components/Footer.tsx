@@ -49,7 +49,7 @@ const Footer = () => {
 
         <div className="mt-8 pt-8 border-t border-border/50 text-center">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Coach AI Gym. Todos os direitos reservados.
+            © {new Date().getFullYear()} HeyMax.fit. Todos os direitos reservados.
           </p>
         </div>
       </div>
