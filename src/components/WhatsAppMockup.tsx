@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import logo from "@/assets/logo-branco.png";
+import logo from "@/assets/HeyMaxfitV.png";
 
 const WhatsAppMockup = () => {
   return (
