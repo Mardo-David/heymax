@@ -276,30 +276,44 @@ const FeatureCard2 = () => {
         <p className="text-foreground/60 font-sans leading-relaxed text-sm">Recupere a frequência com comunicações personalizadas via WhatsApp.</p>
       </div>
 
-      <div className="relative flex-1 bg-black/40 rounded-3xl border-4 border-[#1A1A24] p-3 flex flex-col overflow-hidden w-full max-w-[240px] mx-auto shadow-2xl">
-        {/* Phone Header */}
-        <div className="flex items-center justify-between border-b border-white/5 pb-2 mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-              <span className="text-[10px] text-primary font-bold">L</span>
+      <div className="relative flex-1 bg-[#0b141a] rounded-[2rem] border-[6px] border-[#1f2c34] p-0 flex flex-col overflow-hidden w-full max-w-[260px] mx-auto shadow-2xl">
+        {/* WA Header */}
+        <div className="flex items-center gap-3 bg-[#202c33] px-3 py-2 shrink-0">
+          <div className="flex items-center gap-1 text-[#8696a0]">
+            <ArrowRight className="w-4 h-4 rotate-180" />
+            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden ml-1">
+              <span className="text-sm text-primary font-bold">L</span>
             </div>
-            <span className="text-xs text-foreground/80 font-medium">Lucas</span>
           </div>
-          <Activity className="w-3 h-3 text-primary" />
-        </div>
-
-        {/* Chat Area */}
-        <div className="flex-1 flex flex-col justify-end gap-2 pb-2">
-          {/* AI Bubble */}
-          <div className="self-end bg-[#054D32] text-white/90 text-[11px] rounded-2xl rounded-tr-sm px-3 py-2 max-w-[90%] shadow-md border border-white/5">
-            <span className="font-sans leading-relaxed block min-h-[48px]">{text}<span className="inline-block w-1.5 h-3 bg-white/50 animate-pulse ml-0.5 align-middle"></span></span>
+          <div className="flex flex-col">
+            <span className="text-[13px] text-[#e9edef] font-medium leading-tight">Lucas M.</span>
+            <span className="text-[11px] text-[#8696a0] leading-tight">visto por último hoje às 14:32</span>
           </div>
         </div>
 
-        {/* Terminal Overlay hint */}
-        <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-black/60 rounded flex items-center gap-1 backdrop-blur-sm">
-          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
-          <span className="text-[8px] font-mono text-primary">AI Typing</span>
+        {/* WA Chat Body (Background Pattern) */}
+        <div className="flex-1 bg-[#0b141a] relative flex flex-col justify-end p-3 gap-2 overflow-hidden">
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'url("https://w7.pngwing.com/pngs/922/488/png-transparent-whatsapp-icon-logo-whatsapp-logo-whatsapp-logo-text-logo-grass.png")', backgroundSize: '100px' }}></div>
+
+          {/* Day Label */}
+          <div className="self-center bg-[#182229] text-[#8696a0] text-[10px] px-3 py-1 rounded-lg shadow-sm z-10 mb-2">
+            HOJE
+          </div>
+
+          {/* AI Bubble (Right) */}
+          <div className="relative self-end bg-[#005c4b] text-[#e9edef] text-[13px] rounded-lg rounded-tr-none px-2.5 py-1.5 max-w-[95%] shadow-sm z-10">
+            {/* Tail */}
+            <svg viewBox="0 0 8 13" width="8" height="13" className="absolute top-0 -right-[8px] text-[#005c4b] fill-current">
+              <path d="M5.188 1H0v11.193l6.467-8.625C7.526 2.156 6.958 1 5.188 1z"></path>
+            </svg>
+            <span className="font-sans leading-[1.3] block pb-3">{text}<span className="inline-block w-1.5 h-3 bg-white/50 animate-pulse ml-0.5 align-middle"></span></span>
+            <div className="absolute bottom-1 right-2 flex items-center gap-1">
+              <span className="text-[10px] text-[#8696a0] leading-none">16:42</span>
+              <svg viewBox="0 0 16 11" width="16" height="11" className="text-[#53bdeb] fill-current">
+                <path d="M11.8 1L7 6.1 5.7 4.7l-1.4 1.5 2.7 2.8L13.2 2.5zM15.4 2.5L10.6 7.6l-1-1.1-1.4 1.5 2.4 2.5L16.8 4zM2.8 7.6L1.5 6.1 0 7.6 2.7 10.4l1.4-1.5z"></path>
+              </svg>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -350,18 +364,34 @@ const ProtocolSection = () => {
 
   useEffect(() => {
     let ctx = gsap.context(() => {
+      // The cards overlap exactly, so we use their index to stagger the animation trigger
       cardsRef.current.forEach((card, i) => {
         if (!card || i === 0) return;
         gsap.fromTo(cardsRef.current[i - 1],
           { scale: 1, opacity: 1, filter: "blur(0px)" },
           {
             scale: 0.9,
-            opacity: 0.5,
-            filter: "blur(10px)",
+            opacity: 0.3,
+            filter: "blur(8px)",
             scrollTrigger: {
-              trigger: card,
-              start: "top bottom",
-              end: "top 20%",
+              trigger: containerRef.current,
+              start: `top+=${i * window.innerHeight * 0.8} top`,
+              end: `top+=${(i + 1) * window.innerHeight * 0.8} top`,
+              scrub: true,
+            }
+          }
+        );
+
+        // At the same time, fade in the current card
+        gsap.fromTo(card,
+          { y: 100, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            scrollTrigger: {
+              trigger: containerRef.current,
+              start: `top+=${i * window.innerHeight * 0.8} top`,
+              end: `top+=${(i + 1) * window.innerHeight * 0.8} top`,
               scrub: true,
             }
           }
@@ -371,9 +401,9 @@ const ProtocolSection = () => {
       ScrollTrigger.create({
         trigger: containerRef.current,
         start: "top top",
-        end: `+=${window.innerHeight * 3}`,
+        end: `+=${window.innerHeight * 2.5}`,
         pin: true,
-        scrub: true
+        scrub: true,
       });
 
     }, containerRef);
@@ -387,29 +417,28 @@ const ProtocolSection = () => {
   ];
 
   return (
-    <section id="protocol" ref={containerRef} className="h-screen w-full bg-background flex items-center justify-center overflow-hidden relative border-t border-white/5">
-      <div className="absolute inset-0 bg-brand-dark/50 url('/noise.svg') opacity-20 pointer-events-none mix-blend-overlay"></div>
+    <section id="protocol" ref={containerRef} className="h-screen w-full bg-background flex flex-col items-center justify-center overflow-hidden relative border-t border-white/5">
+      <div className="absolute inset-0 bg-brand-dark/50 opacity-20 pointer-events-none mix-blend-overlay"></div>
 
-      <div className="relative w-full max-w-4xl px-6 h-[60vh]">
+      <div className="relative w-full max-w-4xl px-6 h-[60vh] md:h-[50vh]">
         {steps.map((step, i) => (
           <div
             key={i}
             ref={el => cardsRef.current[i] = el}
-            className="absolute inset-0 w-full h-full bg-[#121826] border border-white/10 rounded-[3rem] shadow-2xl p-12 md:p-20 flex flex-col md:flex-row items-center gap-12"
-            style={{ top: i * 0, zIndex: i }}
+            className={`absolute inset-0 w-full h-full bg-[#121826] border border-white/10 rounded-[3rem] shadow-2xl p-10 md:p-20 flex flex-col md:flex-row items-center gap-12 ${i !== 0 ? 'opacity-0 translate-y-24' : ''}`}
+            style={{ zIndex: i + 10 }}
           >
-            <div className="flex-1">
+            <div className="flex-1 text-center md:text-left">
               <span className="font-mono text-primary text-xl font-bold mb-4 block">PASS_{step.num}</span>
-              <h2 className="font-sans font-bold text-4xl md:text-5xl text-white mb-6 leading-tight">{step.title}</h2>
-              <p className="font-sans text-xl text-foreground/60 leading-relaxed">{step.desc}</p>
+              <h2 className="font-sans font-bold text-3xl md:text-5xl text-white mb-6 leading-tight">{step.title}</h2>
+              <p className="font-sans text-lg md:text-xl text-foreground/60 leading-relaxed">{step.desc}</p>
             </div>
 
             {/* Visual Abstract for each step */}
-            <div className="w-48 h-48 md:w-64 md:h-64 rounded-full border border-white/5 bg-background/50 flex items-center justify-center relative shadow-[inset_0_0_40px_rgba(0,0,0,0.5)]">
-              {i === 0 && <Database className="w-16 h-16 text-primary animate-pulse" />}
-              {i === 1 && <Activity className="w-16 h-16 text-primary animate-bounce" />}
-              {i === 2 && <MessageSquare className="w-16 h-16 text-primary" />}
-              {/* Spinning decorative ring */}
+            <div className="w-40 h-40 md:w-64 md:h-64 shrink-0 rounded-full border border-white/5 bg-background/50 flex items-center justify-center relative shadow-[inset_0_0_40px_rgba(0,0,0,0.5)]">
+              {i === 0 && <Database className="w-12 h-12 md:w-16 md:h-16 text-primary animate-pulse" />}
+              {i === 1 && <Activity className="w-12 h-12 md:w-16 md:h-16 text-primary animate-bounce" />}
+              {i === 2 && <MessageSquare className="w-12 h-12 md:w-16 md:h-16 text-primary" />}
               <div className="absolute inset-4 rounded-full border border-primary/20 border-t-primary animate-spin" style={{ animationDuration: '3s' }}></div>
             </div>
           </div>
