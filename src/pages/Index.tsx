@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ArrowRight, Menu, X, Activity, MessageSquare, TrendingUp, Zap, Smartphone, CheckCircle, CalendarDays, MousePointer2 } from 'lucide-react';
+import { ArrowRight, Menu, X, Activity, MessageSquare, Zap, Smartphone, CheckCircle, Database, ChevronDown } from 'lucide-react';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -27,8 +28,8 @@ const Navbar = () => {
 
       <div className="hidden md:flex items-center gap-8">
         <a href="#features" className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors hover:-translate-y-[1px]">Features</a>
-        <a href="#manifesto" className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors hover:-translate-y-[1px]">Manifesto</a>
-        <a href="#planos" className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors hover:-translate-y-[1px]">Planos</a>
+        <a href="#protocol" className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors hover:-translate-y-[1px]">Protocolo</a>
+        <a href="#faq" className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors hover:-translate-y-[1px]">FAQ</a>
       </div>
 
       <div className="hidden md:flex items-center gap-4">
@@ -68,14 +69,12 @@ const Hero = () => {
 
   return (
     <section ref={heroRef} className="relative min-h-[100dvh] flex items-end pb-32 pt-40 px-6 lg:px-20 overflow-hidden">
-      {/* Imagem de Fundo Premium - Vitalidade Humana em Fundo Escuro */}
       <div className="absolute inset-0 z-0">
         <img
           src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop"
           alt="Academia Premium"
           className="w-full h-full object-cover opacity-30"
         />
-        {/* Gradiente para fundir a imagem com o dark background no inferior */}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/50 to-transparent"></div>
       </div>
@@ -113,18 +112,47 @@ const Hero = () => {
   );
 };
 
+// --- SILENT ESCAPE (A Dor) ---
+const SilentEscape = () => {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let ctx = gsap.context(() => {
+      gsap.from('.silent-elem', {
+        scrollTrigger: { trigger: ref.current, start: "top 80%" },
+        y: 40, opacity: 0, duration: 1, stagger: 0.2, ease: "power2.out"
+      });
+    }, ref);
+    return () => ctx.revert();
+  }, []);
+
+  return (
+    <section ref={ref} className="py-24 px-6 relative bg-background border-t border-white/5 overflow-hidden">
+      {/* Glow Sutil */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl h-64 bg-primary/5 blur-[120px] rounded-full pointer-events-none"></div>
+
+      <div className="max-w-4xl mx-auto text-center relative z-10">
+        <h2 className="silent-elem font-serif italic text-4xl md:text-5xl lg:text-6xl text-foreground/90 leading-tight">
+          A <span className="not-italic font-sans font-bold text-primary px-1">"Fuga Silenciosa"</span> está devorando seu lucro?
+        </h2>
+        <p className="silent-elem mt-8 text-foreground/60 font-sans max-w-2xl mx-auto text-lg md:text-xl leading-relaxed">
+          Mesmo com um espaço incrível, alunos cancelam planos sem dizer uma palavra. A IA da HeyMax identifica os sinais invisíveis de evasão <span className="text-foreground">antes que seja tarde demais.</span>
+        </p>
+      </div>
+    </section>
+  );
+};
+
 // --- 3. INTEGRATIONS MARQUEE ---
 const IntegrationsMarquee = () => {
   return (
     <div className="w-full bg-background border-y border-white/5 py-8 overflow-hidden relative flex flex-col items-center">
-      <p className="text-xs font-mono text-foreground/40 mb-6 uppercase tracking-[0.2em]">O sistema nervoso da sua operação</p>
+      <p className="text-xs font-mono text-foreground/40 mb-6 uppercase tracking-[0.2em]">Integração Perfeita com o Seu Ecossistema</p>
 
-      {/* Degrades nas bordas para suavizar o carrossel */}
       <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none"></div>
       <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none"></div>
 
       <div className="flex gap-16 items-center w-max animate-[marquee_20s_linear_infinite]">
-        {/* Simulação de logos para dar autoridade - replicado para loop contínuo */}
         {[1, 2].map((group) => (
           <React.Fragment key={group}>
             <div className="flex items-center gap-3 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300">
@@ -160,7 +188,6 @@ const IntegrationsMarquee = () => {
     </div>
   );
 };
-import { Database } from 'lucide-react'; // Moved down for clean grouping
 
 // --- 4. FEATURES (ARTEFATOS) ---
 const FeatureCard1 = () => {
@@ -215,7 +242,7 @@ const FeatureCard1 = () => {
 
 const FeatureCard2 = () => {
   const [text, setText] = useState("");
-  const fullText = "Opa Lucas, tudo bem? Notei que você não vem treinar há 12 dias. Saudade de você por aqui! Topa um treino hoje às 18h?";
+  const fullText = "Opa Lucas, sumiu hein? Saudade de você por aqui! Topa um treino hoje às 18h?";
 
   useEffect(() => {
     let index = 0;
@@ -243,19 +270,36 @@ const FeatureCard2 = () => {
   }, []);
 
   return (
-    <div className="h-full bg-white/5 border border-white/10 rounded-[2rem] p-8 flex flex-col transition-all hover:-translate-y-2 hover:border-primary/30 hover:shadow-[0_10px_40px_-10px_rgba(0,230,96,0.15)] group">
-      <div className="mb-8">
-        <h3 className="font-sans font-bold text-2xl text-white mb-3">Engajamento WhatsApp</h3>
-        <p className="text-foreground/60 font-sans leading-relaxed">Recupere a frequência com comunicações personalizadas e automatizadas com alta conversão.</p>
+    <div className="h-full bg-white/5 border border-white/10 rounded-[2rem] p-8 flex flex-col transition-all hover:-translate-y-2 hover:border-primary/30 hover:shadow-[0_10px_40px_-10px_rgba(0,230,96,0.15)] group relative overflow-hidden">
+      <div className="relative z-10 mb-6">
+        <h3 className="font-sans font-bold text-2xl text-white mb-3">WhatsApp Mockup</h3>
+        <p className="text-foreground/60 font-sans leading-relaxed text-sm">Recupere a frequência com comunicações personalizadas via WhatsApp.</p>
       </div>
 
-      <div className="flex-1 bg-black/40 rounded-2xl border border-white/5 p-4 font-mono text-sm text-primary leading-relaxed flex flex-col">
-        <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-2">
-          <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-          <span className="text-foreground/50 text-xs">Terminal_WhatsApp_API</span>
+      <div className="relative flex-1 bg-black/40 rounded-3xl border-4 border-[#1A1A24] p-3 flex flex-col overflow-hidden w-full max-w-[240px] mx-auto shadow-2xl">
+        {/* Phone Header */}
+        <div className="flex items-center justify-between border-b border-white/5 pb-2 mb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+              <span className="text-[10px] text-primary font-bold">L</span>
+            </div>
+            <span className="text-xs text-foreground/80 font-medium">Lucas</span>
+          </div>
+          <Activity className="w-3 h-3 text-primary" />
         </div>
-        <div className="flex-1">
-          {text}<span className="inline-block w-2 h-4 bg-primary animate-pulse ml-1 align-middle"></span>
+
+        {/* Chat Area */}
+        <div className="flex-1 flex flex-col justify-end gap-2 pb-2">
+          {/* AI Bubble */}
+          <div className="self-end bg-[#054D32] text-white/90 text-[11px] rounded-2xl rounded-tr-sm px-3 py-2 max-w-[90%] shadow-md border border-white/5">
+            <span className="font-sans leading-relaxed block min-h-[48px]">{text}<span className="inline-block w-1.5 h-3 bg-white/50 animate-pulse ml-0.5 align-middle"></span></span>
+          </div>
+        </div>
+
+        {/* Terminal Overlay hint */}
+        <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-black/60 rounded flex items-center gap-1 backdrop-blur-sm">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+          <span className="text-[8px] font-mono text-primary">AI Typing</span>
         </div>
       </div>
     </div>
@@ -275,7 +319,6 @@ const FeatureCard3 = () => {
           <div key={i} className="flex flex-col items-center gap-2">
             <div className="w-full bg-primary/20 rounded-t-sm relative group-hover:bg-primary/40 transition-colors duration-500 overflow-hidden" style={{ height: `${height}px` }}>
               <div className="absolute bottom-0 left-0 w-full bg-primary transition-all duration-[1.5s] ease-out delay-100" style={{ height: '0%', transformOrigin: 'bottom' }} />
-              {/* Fake animation trigger via CSS - normally GSAP Scrolltrigger */}
               <div className="absolute inset-0 bg-gradient-to-t from-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" style={{ transform: `translateY(${100 - (i * 20)}%)` }}></div>
             </div>
             <span className="text-[10px] font-mono text-foreground/40">M{i + 1}</span>
@@ -288,13 +331,89 @@ const FeatureCard3 = () => {
 
 const FeaturesSection = () => {
   return (
-    <section id="features" className="py-32 px-6 lg:px-20 bg-background relative z-10">
+    <section id="features" className="py-24 px-6 lg:px-20 bg-background relative z-10">
       <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[400px]">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[420px]">
           <FeatureCard1 />
           <FeatureCard2 />
           <FeatureCard3 />
         </div>
+      </div>
+    </section>
+  );
+};
+
+// --- PROTOCOL (Sticky Stacking) ---
+const ProtocolSection = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    let ctx = gsap.context(() => {
+      cardsRef.current.forEach((card, i) => {
+        if (!card || i === 0) return;
+        gsap.fromTo(cardsRef.current[i - 1],
+          { scale: 1, opacity: 1, filter: "blur(0px)" },
+          {
+            scale: 0.9,
+            opacity: 0.5,
+            filter: "blur(10px)",
+            scrollTrigger: {
+              trigger: card,
+              start: "top bottom",
+              end: "top 20%",
+              scrub: true,
+            }
+          }
+        );
+      });
+
+      ScrollTrigger.create({
+        trigger: containerRef.current,
+        start: "top top",
+        end: `+=${window.innerHeight * 3}`,
+        pin: true,
+        scrub: true
+      });
+
+    }, containerRef);
+    return () => ctx.revert();
+  }, []);
+
+  const steps = [
+    { num: "01", title: "Conecta & Mapeia", desc: "Nossa IA se integra ao seu sistema atual e absorve todo o histórico de frequência e pagamentos dos seus alunos em segundos." },
+    { num: "02", title: "Analisa & Prevê", desc: "Através do Diagnostic Shuffler, o algoritmo calcula a % de risco de evasão de cada cliente, revelando padrões silenciosos que um humano não veria." },
+    { num: "03", title: "Ação & Recuperação", desc: "A IA dispara a mensagem certa, na hora certa, via WhatsApp. Sem parecer um robô, reengajamos seu aluno e evitamos o churn imediatamente." }
+  ];
+
+  return (
+    <section id="protocol" ref={containerRef} className="h-screen w-full bg-background flex items-center justify-center overflow-hidden relative border-t border-white/5">
+      <div className="absolute inset-0 bg-brand-dark/50 url('/noise.svg') opacity-20 pointer-events-none mix-blend-overlay"></div>
+
+      <div className="relative w-full max-w-4xl px-6 h-[60vh]">
+        {steps.map((step, i) => (
+          <div
+            key={i}
+            ref={el => cardsRef.current[i] = el}
+            className="absolute inset-0 w-full h-full bg-[#121826] border border-white/10 rounded-[3rem] shadow-2xl p-12 md:p-20 flex flex-col md:flex-row items-center gap-12"
+            style={{ top: i * 0, zIndex: i }}
+          >
+            <div className="flex-1">
+              <span className="font-mono text-primary text-xl font-bold mb-4 block">PASS_{step.num}</span>
+              <h2 className="font-sans font-bold text-4xl md:text-5xl text-white mb-6 leading-tight">{step.title}</h2>
+              <p className="font-sans text-xl text-foreground/60 leading-relaxed">{step.desc}</p>
+            </div>
+
+            {/* Visual Abstract for each step */}
+            <div className="w-48 h-48 md:w-64 md:h-64 rounded-full border border-white/5 bg-background/50 flex items-center justify-center relative shadow-[inset_0_0_40px_rgba(0,0,0,0.5)]">
+              {i === 0 && <Database className="w-16 h-16 text-primary animate-pulse" />}
+              {i === 1 && <Activity className="w-16 h-16 text-primary animate-bounce" />}
+              {i === 2 && <MessageSquare className="w-16 h-16 text-primary" />}
+              {/* Spinning decorative ring */}
+              <div className="absolute inset-4 rounded-full border border-primary/20 border-t-primary animate-spin" style={{ animationDuration: '3s' }}></div>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -307,15 +426,8 @@ const Philosophy = () => {
   useEffect(() => {
     let ctx = gsap.context(() => {
       gsap.from('.philo-text', {
-        scrollTrigger: {
-          trigger: philoRef.current,
-          start: "top 70%",
-        },
-        y: 30,
-        opacity: 0,
-        duration: 1,
-        stagger: 0.2,
-        ease: "power2.out"
+        scrollTrigger: { trigger: philoRef.current, start: "top 70%" },
+        y: 30, opacity: 0, duration: 1, stagger: 0.2, ease: "power2.out"
       });
     }, philoRef);
     return () => ctx.revert();
@@ -345,14 +457,53 @@ const Philosophy = () => {
   );
 };
 
+// --- FAQ Section ---
+const FAQSection = () => {
+  return (
+    <section id="faq" className="py-24 px-6 lg:px-20 bg-background border-t border-white/5 relative z-10">
+      <div className="max-w-3xl mx-auto">
+        <h2 className="font-sans font-bold text-3xl md:text-4xl text-white mb-12 text-center">Protocolos de Dúvida Frequente</h2>
+
+        <Accordion type="single" collapsible className="w-full space-y-4">
+          <AccordionItem value="item-1" className="border-white/10 bg-white/5 rounded-2xl px-6 border-b-0">
+            <AccordionTrigger className="text-base text-white hover:no-underline hover:text-primary transition-colors py-6">
+              A inteligência artificial parece robótica ou impessoal?
+            </AccordionTrigger>
+            <AccordionContent className="text-foreground/60 text-base leading-relaxed pb-6">
+              Não. O nosso "Telemetry Typewriter" simula as nuances de uma comunicação humana natural, entendendo o contexto de cada aluno (como lesões prévias ou preferência de horários) para gerar mensagens que conectam e convertem.
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="item-2" className="border-white/10 bg-white/5 rounded-2xl px-6 border-b-0">
+            <AccordionTrigger className="text-base text-white hover:no-underline hover:text-primary transition-colors py-6">
+              Minha academia precisa de um sistema super avançado para rodar a HeyMax?
+            </AccordionTrigger>
+            <AccordionContent className="text-foreground/60 text-base leading-relaxed pb-6">
+              Zero complicação. A HeyMax se integra em poucos minutos aos principais softwares do mercado (Evo, Pacto, CloudGym, Tecnofit). Em 24 horas a IA já absorveu o histórico e está prevendo riscos.
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="item-3" className="border-white/10 bg-white/5 rounded-2xl px-6 border-b-0">
+            <AccordionTrigger className="text-base text-white hover:no-underline hover:text-primary transition-colors py-6">
+              Isso vai dar mais trabalho para o meu time de recepção/vendas?
+            </AccordionTrigger>
+            <AccordionContent className="text-foreground/60 text-base leading-relaxed pb-6">
+              Pelo contrário. A HeyMax trabalha em "modo background", agindo automaticamente nos alunos sob o risco de evasão. Seu time será focado apenas nos casos críticos ou de altíssima conversão de upsell que a IA também sinaliza.
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </div>
+    </section>
+  );
+};
+
 // --- 6. CTA / PRICING ---
 const CTASection = () => {
   return (
-    <section id="planos" className="py-32 px-6 lg:px-20 bg-background relative">
+    <section id="planos" className="py-32 px-6 lg:px-20 bg-background relative border-t border-white/5">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-2xl h-64 bg-primary/20 blur-[120px] rounded-full pointer-events-none"></div>
 
       <div className="max-w-4xl mx-auto w-full bg-white/5 border border-primary/20 rounded-[3rem] p-12 md:p-20 text-center relative overflow-hidden">
-        {/* Shine effect */}
         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full hover:animate-[shine_1.5s_ease-in-out]"></div>
 
         <h2 className="font-sans font-bold text-4xl md:text-6xl text-white mb-6 tracking-tight">Pronto para blindar seu faturamento?</h2>
@@ -399,9 +550,9 @@ const Footer = () => {
           <h4 className="font-sans font-bold text-white mb-6">Produto</h4>
           <ul className="space-y-4 font-sans text-sm text-foreground/60">
             <li><a href="#" className="hover:text-primary transition-colors">Predição de Churn</a></li>
-            <li><a href="#" className="hover:text-primary transition-colors">Agentes de WhatsApp</a></li>
+            <li><a href="#" className="hover:text-primary transition-colors">Protocolo GSAP</a></li>
             <li><a href="#" className="hover:text-primary transition-colors">Integrações API</a></li>
-            <li><a href="#" className="hover:text-primary transition-colors">Preços</a></li>
+            <li><a href="#faq" className="hover:text-primary transition-colors">FAQ</a></li>
           </ul>
         </div>
 
@@ -417,7 +568,7 @@ const Footer = () => {
 
       <div className="max-w-6xl mx-auto pt-8 border-t border-white/5 text-center flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-mono text-foreground/40">
         <p>&copy; {new Date().getFullYear()} HeyMax.fit. Todos os direitos reservados.</p>
-        <p>V 2.0.4 - BR_SA</p>
+        <p>V 2.1.0 - BR_SA</p>
       </div>
     </footer>
   );
@@ -428,9 +579,12 @@ const Index = () => {
     <div className="bg-background text-foreground min-h-screen font-sans overflow-x-hidden selection:bg-primary/30 selection:text-white">
       <Navbar />
       <Hero />
+      <SilentEscape />
       <IntegrationsMarquee />
       <FeaturesSection />
+      <ProtocolSection />
       <Philosophy />
+      <FAQSection />
       <CTASection />
       <Footer />
     </div>
