@@ -45,6 +45,20 @@ const Navbar = () => {
       <button className="md:hidden text-foreground" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
         {mobileMenuOpen ? <X /> : <Menu />}
       </button>
+
+      {/* Mobile Menu */}
+      <div className={`md:hidden absolute top-[calc(100%+0.5rem)] left-0 w-full bg-[#0a0f18]/95 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col items-center py-6 gap-6 transition-all duration-300 origin-top shadow-2xl ${mobileMenuOpen ? 'scale-y-100 opacity-100' : 'scale-y-0 opacity-0 pointer-events-none'}`}>
+        <a href="#features" onClick={() => setMobileMenuOpen(false)} className="text-base font-medium text-foreground/80 hover:text-primary transition-colors">Funcionalidades</a>
+        <a href="#protocol" onClick={() => setMobileMenuOpen(false)} className="text-base font-medium text-foreground/80 hover:text-primary transition-colors">Protocolo</a>
+        <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="text-base font-medium text-foreground/80 hover:text-primary transition-colors">FAQ</a>
+        <a href="/login" onClick={() => setMobileMenuOpen(false)} className="text-base font-medium text-foreground/60 hover:text-foreground transition-colors">Acessar</a>
+        <button onClick={() => window.open('https://wa.me/5581999897501?text=Olá! Gostaria de agendar uma demonstração do HeyMax.fit', '_blank')} className="group relative overflow-hidden rounded-full bg-primary px-6 py-3 text-sm font-bold text-background transition-all hover:scale-[1.03] active:scale-95">
+          <span className="relative z-10 flex items-center gap-2">
+            Agendar Demonstração <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </span>
+          <div className="absolute inset-0 z-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+        </button>
+      </div>
     </nav>
   );
 };
