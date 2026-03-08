@@ -27,14 +27,14 @@ const Navbar = () => {
       </div>
 
       <div className="hidden md:flex items-center gap-8">
-        <a href="#features" className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors hover:-translate-y-[1px]">Features</a>
+        <a href="#features" className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors hover:-translate-y-[1px]">Funcionalidades</a>
         <a href="#protocol" className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors hover:-translate-y-[1px]">Protocolo</a>
         <a href="#faq" className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors hover:-translate-y-[1px]">FAQ</a>
       </div>
 
       <div className="hidden md:flex items-center gap-4">
         <a href="/login" className="text-sm font-medium text-foreground/60 hover:text-foreground transition-colors">Acessar</a>
-        <button className="group relative overflow-hidden rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-background transition-all hover:scale-[1.03] active:scale-95" style={{ transitionTimingFunction: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)' }}>
+        <button onClick={() => window.open('https://wa.me/5581999897501?text=Olá! Gostaria de agendar uma demonstração do HeyMax.fit', '_blank')} className="group relative overflow-hidden rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-background transition-all hover:scale-[1.03] active:scale-95" style={{ transitionTimingFunction: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)' }}>
           <span className="relative z-10 flex items-center gap-2">
             Agendar Demonstração <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </span>
@@ -83,15 +83,15 @@ const Hero = () => {
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/10 mb-8 hero-elem backdrop-blur-md">
           <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
           <span className="text-xs font-mono text-primary font-medium tracking-wide border-r border-primary/30 pr-2 mr-2">v2.0 LIVE</span>
-          <span className="text-xs font-sans text-foreground/80 font-medium tracking-wide">AI Engine para Academias</span>
+          <span className="text-xs font-sans text-foreground/80 font-medium tracking-wide">IA para Academias e Studios</span>
         </div>
 
         <h1 className="flex flex-col gap-2 mb-8 max-w-4xl">
           <span className="hero-elem font-sans font-bold text-4xl md:text-5xl lg:text-7xl tracking-tight text-foreground/90 leading-tight">
-            Inteligência Artificial encontra a
+            Seu ERP avisa quem vai cancelar.
           </span>
-          <span className="hero-elem font-serif italic font-medium text-6xl md:text-7xl lg:text-9xl text-white leading-none tracking-tight">
-            Retenção Extrema.
+          <span className="hero-elem font-serif italic font-medium text-5xl md:text-6xl lg:text-8xl text-white leading-none tracking-tight">
+            O HeyMax faz eles ficarem.
           </span>
         </h1>
 
@@ -100,7 +100,7 @@ const Hero = () => {
         </p>
 
         <div className="hero-elem flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-          <button className="group relative overflow-hidden rounded-[2rem] bg-primary px-8 py-4 text-base font-bold text-background transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_40px_rgba(0,230,96,0.3)]">
+          <button onClick={() => window.open('https://wa.me/5581999897501?text=Olá! Gostaria de agendar uma demonstração do HeyMax.fit', '_blank')} className="group relative overflow-hidden rounded-[2rem] bg-primary px-8 py-4 text-base font-bold text-background transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_40px_rgba(0,230,96,0.3)]">
             <span className="relative z-10 flex items-center justify-center gap-2">
               Agendar Minha Demonstração <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </span>
@@ -156,24 +156,20 @@ const IntegrationsMarquee = () => {
         {[1, 2].map((group) => (
           <React.Fragment key={group}>
             <div className="flex items-center gap-3 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300">
-              <MessageSquare className="w-6 h-6 text-primary" />
-              <span className="font-sans font-bold text-xl tracking-tight">WhatsApp OBA</span>
+              <Activity className="w-6 h-6 text-primary" />
+              <span className="font-sans font-bold text-xl tracking-tight">Next Fit</span>
             </div>
             <div className="flex items-center gap-3 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300">
               <Zap className="w-6 h-6" />
-              <span className="font-sans font-bold text-xl tracking-tight">EVO Mkt</span>
-            </div>
-            <div className="flex items-center gap-3 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300">
-              <Activity className="w-6 h-6" />
-              <span className="font-sans font-bold text-xl tracking-tight">CloudGym</span>
-            </div>
-            <div className="flex items-center gap-3 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300">
-              <Database className="w-6 h-6" />
-              <span className="font-sans font-bold text-xl tracking-tight">Pacto CRM</span>
+              <span className="font-sans font-bold text-xl tracking-tight">ABC Evo</span>
             </div>
             <div className="flex items-center gap-3 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300">
               <Smartphone className="w-6 h-6" />
-              <span className="font-sans font-bold text-xl tracking-tight">Tecnofit</span>
+              <span className="font-sans font-bold text-xl tracking-tight">Wellhub</span>
+            </div>
+            <div className="flex items-center gap-3 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300">
+              <CheckCircle className="w-6 h-6" />
+              <span className="font-sans font-bold text-xl tracking-tight">TotalPass</span>
             </div>
           </React.Fragment>
         ))}
@@ -272,7 +268,7 @@ const FeatureCard2 = () => {
   return (
     <div className="h-full bg-white/5 border border-white/10 rounded-[2rem] p-8 flex flex-col transition-all hover:-translate-y-2 hover:border-primary/30 hover:shadow-[0_10px_40px_-10px_rgba(0,230,96,0.15)] group relative overflow-hidden">
       <div className="relative z-10 mb-6">
-        <h3 className="font-sans font-bold text-2xl text-white mb-3">WhatsApp Mockup</h3>
+        <h3 className="font-sans font-bold text-2xl text-white mb-3">Direto no WhatsApp</h3>
         <p className="text-foreground/60 font-sans leading-relaxed text-sm">Recupere a frequência com comunicações personalizadas via WhatsApp.</p>
       </div>
 
@@ -328,16 +324,28 @@ const FeatureCard3 = () => {
         <p className="text-foreground/60 font-sans leading-relaxed">Aumente o tempo de permanência e o faturamento com uma gestão inteligente do ciclo de vida.</p>
       </div>
 
-      <div className="relative z-10 flex-1 grid grid-cols-5 gap-2 content-end">
-        {[20, 35, 60, 85, 120].map((height, i) => (
-          <div key={i} className="flex flex-col items-center gap-2">
-            <div className="w-full bg-primary/20 rounded-t-sm relative group-hover:bg-primary/40 transition-colors duration-500 overflow-hidden" style={{ height: `${height}px` }}>
-              <div className="absolute bottom-0 left-0 w-full bg-primary transition-all duration-[1.5s] ease-out delay-100" style={{ height: '0%', transformOrigin: 'bottom' }} />
-              <div className="absolute inset-0 bg-gradient-to-t from-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" style={{ transform: `translateY(${100 - (i * 20)}%)` }}></div>
-            </div>
-            <span className="text-[10px] font-mono text-foreground/40">M{i + 1}</span>
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center gap-4 py-4 w-full">
+        {/* Widget 1 */}
+        <div className="w-full max-w-[240px] bg-background/80 backdrop-blur-sm border border-primary/30 rounded-2xl p-4 flex items-center gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.3)] group-hover:border-primary/60 transition-colors">
+          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+            <span className="text-primary font-bold text-lg">R$</span>
           </div>
-        ))}
+          <div className="flex flex-col">
+            <span className="text-xs font-mono text-foreground/60">Receita Recuperada Hoje</span>
+            <span className="text-lg font-sans font-bold text-white leading-tight">R$ 4.850,00</span>
+          </div>
+        </div>
+
+        {/* Widget 2 */}
+        <div className="w-full max-w-[240px] bg-background/80 backdrop-blur-sm border border-white/10 rounded-2xl p-4 flex items-center gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.3)] ml-8 group-hover:border-white/30 transition-colors">
+          <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+            <CheckCircle className="w-5 h-5 text-white" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-mono text-foreground/60">LTV Expandido</span>
+            <span className="text-sm font-sans font-bold text-white leading-tight">+6 meses renovados</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -475,11 +483,11 @@ const Philosophy = () => {
 
       <div className="relative z-10 max-w-4xl mx-auto text-center flex flex-col items-center">
         <p className="philo-text font-sans text-xl md:text-2xl text-foreground/50 mb-8 font-medium">
-          A maioria da indústria foca em: <span className="line-through">vender planos a qualquer custo</span>.
+          Atrair alunos custa caro. Perdê-los em silêncio quebra o seu negócio.
         </p>
         <h2 className="philo-text font-serif italic text-5xl md:text-7xl lg:text-8xl text-white leading-[1.1] tracking-tight">
           Nós focamos em: <br />
-          <span className="text-primary not-italic font-sans font-bold text-6xl md:text-8xl lg:text-9xl tracking-tighter shadow-primary drop-shadow-2xl inline-block mt-4">Retenção<br />Inteligente.</span>
+          <span className="text-primary not-italic font-sans font-bold text-6xl md:text-8xl lg:text-9xl tracking-tighter shadow-primary drop-shadow-2xl inline-block mt-4">Recuperação<br />Ativa.</span>
         </h2>
       </div>
     </section>
@@ -540,7 +548,7 @@ const CTASection = () => {
           Pare de perder alunos silenciosamente. Implemente a IA que identifica, engaja e retém seus clientes no piloto automático.
         </p>
 
-        <button className="group relative overflow-hidden rounded-full bg-primary px-10 py-5 text-lg font-bold text-background transition-all hover:scale-[1.03] active:scale-95 shadow-[0_0_60px_rgba(0,230,96,0.4)] mx-auto inline-flex items-center gap-3">
+        <button onClick={() => window.open('https://wa.me/5581999897501?text=Olá! Gostaria de agendar uma demonstração do HeyMax.fit', '_blank')} className="group relative overflow-hidden rounded-full bg-primary px-10 py-5 text-lg font-bold text-background transition-all hover:scale-[1.03] active:scale-95 shadow-[0_0_60px_rgba(0,230,96,0.4)] mx-auto inline-flex items-center gap-3">
           <span className="relative z-10 flex items-center gap-2">
             Agendar Minha Demonstração <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
           </span>
