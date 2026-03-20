@@ -1,0 +1,1025 @@
+{
+  "updatedAt": "2026-03-19T19:07:02.959Z",
+  "createdAt": "2026-03-05T13:42:23.306Z",
+  "id": "x2WBqbyUfxWczi5E",
+  "name": "[FUNIL] Aula Experimental",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 13 * * *"
+            },
+            {
+              "field": "cronExpression",
+              "expression": "0 21 * * *"
+            }
+          ]
+        }
+      },
+      "id": "0a28eb04-010b-4350-b89f-9d1337c57c95",
+      "name": "Schedule Trigger",
+      "position": [
+        -48,
+        128
+      ],
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "url": "https://evo-integracao-api.w12app.com.br/api/v1/entries",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "registerInitialDate",
+              "value": "={{ $now.setZone('America/Sao_Paulo').toFormat('dd/MM/yyyy') }}"
+            },
+            {
+              "name": "take",
+              "value": "200"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "09ece884-78ba-44a2-9f05-04f595e39992",
+      "name": "Buscar entradas do dia",
+      "position": [
+        176,
+        128
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "zpKpPOzFmgdtpDxd",
+          "name": "API EVO Treno"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst filtered = items.filter(item => \n  item.json.idProspect !== null && \n  item.json.idProspect !== undefined &&\n  item.json.idMember === null\n);\n\nif (filtered.length === 0) {\n  return [];\n}\n\nreturn filtered.map(item => ({ json: item.json }));"
+      },
+      "id": "9fa761f3-f8a5-4c1f-afed-64e9f716c91e",
+      "name": "Filtrar prospects",
+      "position": [
+        400,
+        128
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "url": "https://evo-integracao-api.w12app.com.br/api/v1/prospects",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "idProspect",
+              "value": "={{ $json.idProspect }}"
+            },
+            {
+              "name": "take",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "435ba1b6-e674-4c6d-9c14-ee44582ff259",
+      "name": "Buscar dados do prospect",
+      "position": [
+        624,
+        128
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "zpKpPOzFmgdtpDxd",
+          "name": "API EVO Treno"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id FROM trial_feedback WHERE phone = $1 AND DATE(started_at) = CURRENT_DATE",
+        "options": {
+          "queryReplacement": "={{ [ $('Buscar dados do prospect').item.json.cellphone ] }}"
+        }
+      },
+      "id": "5e44ae67-413d-4b11-be5c-22e3f83581d3",
+      "name": "Check de duplicata",
+      "position": [
+        848,
+        128
+      ],
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "Qu3wWADR0qH8hskO",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ Object.keys($json).length }}",
+              "operator": {
+                "operation": "equals",
+                "type": "number"
+              },
+              "rightValue": 0
+            }
+          ],
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          }
+        },
+        "options": {}
+      },
+      "id": "04df8df5-31b5-4f7b-ba9c-2b7f776a3256",
+      "name": "Duplicata IF",
+      "position": [
+        1072,
+        128
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "jsCode": "const prospect = $node['Buscar dados do prospect'].json;\nconst data = Array.isArray(prospect) ? prospect[0] : prospect;\n\nconst uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {\n  const r = Math.random() * 16 | 0;\n  const v = c === 'x' ? r : (r & 0x3 | 0x8);\n  return v.toString(16);\n});\n\nconst numero = '55' + data.cellphone;\nconst nome = data.firstName.charAt(0).toUpperCase() + data.firstName.slice(1).toLowerCase();\n\nreturn [{\n  json: {\n    session_id: uuid,\n    cellphone: data.cellphone,\n    numero_formatado: numero,\n    firstName: nome,\n    payload_evo: JSON.stringify({\n      number: numero,\n      text: 'Olá, ' + nome + '! 👋 Que bom ter você aqui hoje! Como foi sua experiência na aula experimental? Conta pra mim 😊',\n      delay: 0\n    })\n  }\n}];"
+      },
+      "id": "b32337d0-eb44-4b6f-9c39-ee1fa79094df",
+      "name": "Generate UUID",
+      "position": [
+        1296,
+        128
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.heymax.fit/message/sendText/trenobell",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "7FE740D978BC-436B-BA12-55589F0A4037"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.payload_evo }}",
+        "options": {}
+      },
+      "id": "beec57de-d909-493a-abb6-6a253ecb0dd0",
+      "name": "Enviar mensagem de abertura",
+      "position": [
+        1520,
+        128
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO trial_feedback (session_id, phone, coleta_step, status_coleta, started_at) VALUES ($1, $2, 'q1', 'parcial', NOW())",
+        "options": {
+          "queryReplacement": "={{ [ $('Generate UUID').item.json.session_id, $('Generate UUID').item.json.cellphone ] }}"
+        }
+      },
+      "id": "9b8ff22d-bff0-4e51-aa31-7b54983f6600",
+      "name": "INSERT em trial_feedback",
+      "position": [
+        1744,
+        128
+      ],
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "credentials": {
+        "postgres": {
+          "id": "Qu3wWADR0qH8hskO",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "webhook-trigger-test",
+      "name": "Webhook Trigger (Teste)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        -150
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "options": {},
+        "path": "funil-aula-experimental-test",
+        "responseMode": "onReceived"
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Buscar entradas do dia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar entradas do dia": {
+      "main": [
+        [
+          {
+            "node": "Filtrar prospects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar prospects": {
+      "main": [
+        [
+          {
+            "node": "Buscar dados do prospect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar dados do prospect": {
+      "main": [
+        [
+          {
+            "node": "Check de duplicata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check de duplicata": {
+      "main": [
+        [
+          {
+            "node": "Duplicata IF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Duplicata IF": {
+      "main": [
+        [
+          {
+            "node": "Generate UUID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate UUID": {
+      "main": [
+        [
+          {
+            "node": "Enviar mensagem de abertura",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar mensagem de abertura": {
+      "main": [
+        [
+          {
+            "node": "INSERT em trial_feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "INSERT em trial_feedback": {
+      "main": [
+        []
+      ]
+    },
+    "Webhook Trigger (Teste)": {
+      "main": [
+        [
+          {
+            "node": "Buscar entradas do dia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "America/Sao_Paulo",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Buscar entradas do dia": [
+      {
+        "json": {
+          "date": "2026-03-07T10:00:00",
+          "idMember": null,
+          "idProspect": 97,
+          "nameMember": null,
+          "nameProspect": "TESTE",
+          "entryType": "Controle de acesso",
+          "entryAction": "entry"
+        }
+      }
+    ],
+    "Buscar dados do prospect": [
+      {
+        "json": {
+          "idProspect": 97,
+          "idBranch": 1,
+          "branchName": "T. family club",
+          "firstName": "NATÁLIA",
+          "lastName": "MARQUES",
+          "cellphone": "81996695511",
+          "email": "",
+          "registerDate": "2025-06-05T06:40:33",
+          "gender": "F",
+          "signupType": "Other",
+          "mktChannel": "FACHADA (PASSOU EM FRENTE)",
+          "idMember": null
+        }
+      }
+    ]
+  },
+  "versionId": "ea1087d2-7713-492f-b593-7f9e6868dcd8",
+  "activeVersionId": "ea1087d2-7713-492f-b593-7f9e6868dcd8",
+  "versionCounter": 118,
+  "triggerCount": 2,
+  "shared": [
+    {
+      "updatedAt": "2026-03-05T13:42:23.306Z",
+      "createdAt": "2026-03-05T13:42:23.306Z",
+      "role": "workflow:owner",
+      "workflowId": "x2WBqbyUfxWczi5E",
+      "projectId": "JwjbR4bx5YBkAPVP",
+      "project": {
+        "updatedAt": "2025-04-22T00:05:57.581Z",
+        "createdAt": "2025-04-21T23:56:45.246Z",
+        "id": "JwjbR4bx5YBkAPVP",
+        "name": "Mardo Carneiro <mardodavid@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "51879556-966c-42e5-bead-ed1162a850f8"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-03-19T19:05:21.466Z",
+    "createdAt": "2026-03-19T19:05:21.466Z",
+    "versionId": "ea1087d2-7713-492f-b593-7f9e6868dcd8",
+    "workflowId": "x2WBqbyUfxWczi5E",
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "cronExpression",
+                "expression": "0 13 * * *"
+              },
+              {
+                "field": "cronExpression",
+                "expression": "0 21 * * *"
+              }
+            ]
+          }
+        },
+        "id": "0a28eb04-010b-4350-b89f-9d1337c57c95",
+        "name": "Schedule Trigger",
+        "position": [
+          -48,
+          128
+        ],
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2
+      },
+      {
+        "parameters": {
+          "url": "https://evo-integracao-api.w12app.com.br/api/v1/entries",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBasicAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "registerInitialDate",
+                "value": "={{ $now.setZone('America/Sao_Paulo').toFormat('dd/MM/yyyy') }}"
+              },
+              {
+                "name": "take",
+                "value": "200"
+              }
+            ]
+          },
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "id": "09ece884-78ba-44a2-9f05-04f595e39992",
+        "name": "Buscar entradas do dia",
+        "position": [
+          176,
+          128
+        ],
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "credentials": {
+          "httpBasicAuth": {
+            "id": "zpKpPOzFmgdtpDxd",
+            "name": "API EVO Treno"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const items = $input.all();\nconst filtered = items.filter(item => \n  item.json.idProspect !== null && \n  item.json.idProspect !== undefined &&\n  item.json.idMember === null\n);\n\nif (filtered.length === 0) {\n  return [];\n}\n\nreturn filtered.map(item => ({ json: item.json }));"
+        },
+        "id": "9fa761f3-f8a5-4c1f-afed-64e9f716c91e",
+        "name": "Filtrar prospects",
+        "position": [
+          400,
+          128
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "parameters": {
+          "url": "https://evo-integracao-api.w12app.com.br/api/v1/prospects",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBasicAuth",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "idProspect",
+                "value": "={{ $json.idProspect }}"
+              },
+              {
+                "name": "take",
+                "value": "1"
+              }
+            ]
+          },
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "id": "435ba1b6-e674-4c6d-9c14-ee44582ff259",
+        "name": "Buscar dados do prospect",
+        "position": [
+          624,
+          128
+        ],
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "credentials": {
+          "httpBasicAuth": {
+            "id": "zpKpPOzFmgdtpDxd",
+            "name": "API EVO Treno"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "SELECT id FROM trial_feedback WHERE phone = $1 AND DATE(started_at) = CURRENT_DATE",
+          "options": {
+            "queryReplacement": "={{ [ $('Buscar dados do prospect').item.json.cellphone ] }}"
+          }
+        },
+        "id": "5e44ae67-413d-4b11-be5c-22e3f83581d3",
+        "name": "Check de duplicata",
+        "position": [
+          848,
+          128
+        ],
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "alwaysOutputData": true,
+        "credentials": {
+          "postgres": {
+            "id": "Qu3wWADR0qH8hskO",
+            "name": "Postgres account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "1",
+                "leftValue": "={{ Object.keys($json).length }}",
+                "operator": {
+                  "operation": "equals",
+                  "type": "number"
+                },
+                "rightValue": 0
+              }
+            ],
+            "options": {
+              "version": 2,
+              "leftValue": "",
+              "caseSensitive": true,
+              "typeValidation": "strict"
+            }
+          },
+          "options": {}
+        },
+        "id": "04df8df5-31b5-4f7b-ba9c-2b7f776a3256",
+        "name": "Duplicata IF",
+        "position": [
+          1072,
+          128
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2
+      },
+      {
+        "parameters": {
+          "jsCode": "const prospect = $node['Buscar dados do prospect'].json;\nconst data = Array.isArray(prospect) ? prospect[0] : prospect;\n\nconst uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {\n  const r = Math.random() * 16 | 0;\n  const v = c === 'x' ? r : (r & 0x3 | 0x8);\n  return v.toString(16);\n});\n\nconst numero = '55' + data.cellphone;\nconst nome = data.firstName.charAt(0).toUpperCase() + data.firstName.slice(1).toLowerCase();\n\nreturn [{\n  json: {\n    session_id: uuid,\n    cellphone: data.cellphone,\n    numero_formatado: numero,\n    firstName: nome,\n    payload_evo: JSON.stringify({\n      number: numero,\n      text: 'Olá, ' + nome + '! 👋 Que bom ter você aqui hoje! Como foi sua experiência na aula experimental? Conta pra mim 😊',\n      delay: 0\n    })\n  }\n}];"
+        },
+        "id": "b32337d0-eb44-4b6f-9c39-ee1fa79094df",
+        "name": "Generate UUID",
+        "position": [
+          1296,
+          128
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://evo.heymax.fit/message/sendText/trenobell",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "7FE740D978BC-436B-BA12-55589F0A4037"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ $json.payload_evo }}",
+          "options": {}
+        },
+        "id": "beec57de-d909-493a-abb6-6a253ecb0dd0",
+        "name": "Enviar mensagem de abertura",
+        "position": [
+          1520,
+          128
+        ],
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "INSERT INTO trial_feedback (session_id, phone, coleta_step, status_coleta, started_at) VALUES ($1, $2, 'q1', 'parcial', NOW())",
+          "options": {
+            "queryReplacement": "={{ [ $('Generate UUID').item.json.session_id, $('Generate UUID').item.json.cellphone ] }}"
+          }
+        },
+        "id": "9b8ff22d-bff0-4e51-aa31-7b54983f6600",
+        "name": "INSERT em trial_feedback",
+        "position": [
+          1744,
+          128
+        ],
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "credentials": {
+          "postgres": {
+            "id": "Qu3wWADR0qH8hskO",
+            "name": "Postgres account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE trial_feedback SET resume_url = $1 WHERE session_id = $2",
+          "options": {
+            "queryReplacement": "={{ [ $execution.resumeUrl, $('Generate UUID').item.json.session_id ] }}"
+          }
+        },
+        "id": "851f5c20-a299-4750-9e90-6d97444ff418",
+        "name": "UPDATE resume_url",
+        "position": [
+          1968,
+          128
+        ],
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "credentials": {
+          "postgres": {
+            "id": "Qu3wWADR0qH8hskO",
+            "name": "Postgres account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "resume": "webhook",
+          "httpMethod": "POST",
+          "options": {}
+        },
+        "id": "9c196a2c-7497-42b1-85c2-2efff320edc5",
+        "name": "Wait (Response)",
+        "position": [
+          2192,
+          128
+        ],
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "webhookId": "a80caa80-541c-44cf-b388-b548e63b3a72"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Extrai texto da resposta e phone do prospect (se enviado no body)\n// NOTA: Se phone não vier no POST, a busca no banco pega a sessão parcial mais recente\n// DÉBITO TÉCNICO: com múltiplos prospects simultâneos, a busca sem phone pode retornar sessão errada\nconst body = $json.body || {};\nconst text = body.message || body.text || '';\nconst phone = body.phone || '';\n\nreturn {\n  json: {\n    text: text,\n    phone: phone\n  }\n};",
+          "mode": "runOnceForEachItem"
+        },
+        "id": "0a3c06e3-48c6-4282-90c3-310678548026",
+        "name": "Format Sub Input",
+        "position": [
+          2416,
+          128
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "parameters": {
+          "workflowId": "vlPyFCr3gVldbIcj",
+          "mode": "each",
+          "options": {}
+        },
+        "id": "b03db2c7-f469-4ea8-9df5-73f6f9811f94",
+        "name": "Execute Workflow",
+        "position": [
+          3088,
+          128
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.1
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "SELECT session_id, phone FROM trial_feedback WHERE status_coleta = 'parcial' AND coleta_step = 'q1' AND (($1 != '' AND phone = $1) OR ($1 = '')) ORDER BY started_at DESC LIMIT 1",
+          "options": {
+            "queryReplacement": "={{ [$json.phone] }}"
+          }
+        },
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          2640,
+          128
+        ],
+        "id": "09aa32a0-98b7-4086-a36c-f5fb48172c73",
+        "name": "Buscar session do Wait",
+        "credentials": {
+          "postgres": {
+            "id": "Qu3wWADR0qH8hskO",
+            "name": "Postgres account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const textoRecebido = $('Format Sub Input').first().json.text;\n\nreturn {\n  json: {\n    session_id: $json.session_id,\n    from: $json.phone,\n    text: textoRecebido\n  }\n};",
+          "mode": "runOnceForEachItem"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2864,
+          128
+        ],
+        "id": "1e75e90a-4dc8-42d9-9bc4-0b7575e4b46b",
+        "name": "Montar payload SUB"
+      },
+      {
+        "id": "webhook-trigger-test",
+        "name": "Webhook Trigger (Teste)",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          -48,
+          -150
+        ],
+        "parameters": {
+          "httpMethod": "POST",
+          "options": {},
+          "path": "funil-aula-experimental-test",
+          "responseMode": "onReceived"
+        }
+      }
+    ],
+    "connections": {
+      "Schedule Trigger": {
+        "main": [
+          [
+            {
+              "node": "Buscar entradas do dia",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Buscar entradas do dia": {
+        "main": [
+          [
+            {
+              "node": "Filtrar prospects",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Filtrar prospects": {
+        "main": [
+          [
+            {
+              "node": "Buscar dados do prospect",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Buscar dados do prospect": {
+        "main": [
+          [
+            {
+              "node": "Check de duplicata",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check de duplicata": {
+        "main": [
+          [
+            {
+              "node": "Duplicata IF",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Duplicata IF": {
+        "main": [
+          [
+            {
+              "node": "Generate UUID",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Generate UUID": {
+        "main": [
+          [
+            {
+              "node": "Enviar mensagem de abertura",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Enviar mensagem de abertura": {
+        "main": [
+          [
+            {
+              "node": "INSERT em trial_feedback",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "INSERT em trial_feedback": {
+        "main": [
+          [
+            {
+              "node": "UPDATE resume_url",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "UPDATE resume_url": {
+        "main": [
+          [
+            {
+              "node": "Wait (Response)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wait (Response)": {
+        "main": [
+          [
+            {
+              "node": "Format Sub Input",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format Sub Input": {
+        "main": [
+          [
+            {
+              "node": "Buscar session do Wait",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Buscar session do Wait": {
+        "main": [
+          [
+            {
+              "node": "Montar payload SUB",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Montar payload SUB": {
+        "main": [
+          [
+            {
+              "node": "Execute Workflow",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Webhook Trigger (Teste)": {
+        "main": [
+          [
+            {
+              "node": "Buscar entradas do dia",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Mardo Carneiro",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-03-19T19:05:21.500Z",
+        "id": 489,
+        "workflowId": "x2WBqbyUfxWczi5E",
+        "versionId": "ea1087d2-7713-492f-b593-7f9e6868dcd8",
+        "event": "deactivated",
+        "userId": "51879556-966c-42e5-bead-ed1162a850f8"
+      },
+      {
+        "createdAt": "2026-03-19T19:05:21.517Z",
+        "id": 490,
+        "workflowId": "x2WBqbyUfxWczi5E",
+        "versionId": "ea1087d2-7713-492f-b593-7f9e6868dcd8",
+        "event": "activated",
+        "userId": "51879556-966c-42e5-bead-ed1162a850f8"
+      },
+      {
+        "createdAt": "2026-03-19T19:07:03.010Z",
+        "id": 491,
+        "workflowId": "x2WBqbyUfxWczi5E",
+        "versionId": "ea1087d2-7713-492f-b593-7f9e6868dcd8",
+        "event": "deactivated",
+        "userId": "51879556-966c-42e5-bead-ed1162a850f8"
+      },
+      {
+        "createdAt": "2026-03-19T19:07:03.043Z",
+        "id": 492,
+        "workflowId": "x2WBqbyUfxWczi5E",
+        "versionId": "ea1087d2-7713-492f-b593-7f9e6868dcd8",
+        "event": "activated",
+        "userId": "51879556-966c-42e5-bead-ed1162a850f8"
+      }
+    ]
+  }
+}

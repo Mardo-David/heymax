@@ -1,0 +1,2554 @@
+{
+  "updatedAt": "2026-03-19T16:47:57.967Z",
+  "createdAt": "2026-03-02T00:59:50.426Z",
+  "id": "vlPyFCr3gVldbIcj",
+  "name": "[SUB] Coleta de Feedback Q1→Q4",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Espera receber { session_id, from, text } como entrada deste sub-workflow\nconst msg = $json || {};\n\nconst sessionId = String(msg.session_id || '').trim();\nconst from      = String(msg.from || '').replace(/\\D/g,'');\nconst text      = String(msg.text || '').trim();\n\n// helpers\nconst toNumberOrNull = (s) => (/^\\d+$/.test(s) ? Number(s) : null);\nconst yesNo = (s) => {\n  const t = s.toLowerCase();\n  if (/(sim|s|yes|y)/.test(t))  return true;\n  if (/(não|nao|n|no)/.test(t)) return false;\n  return null;\n};\n\nreturn [{\n  json: {\n    session_id: sessionId,\n    from,\n    text,\n    parsed: { nps: toNumberOrNull(text), bool: yesNo(text) }\n  }\n}];\n"
+      },
+      "id": "28b30168-c432-41c0-90fc-abcb4c65f4d4",
+      "name": "Parse Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1936,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT session_id, coleta_step FROM trial_feedback WHERE session_id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $json.session_id ] }}"
+        }
+      },
+      "id": "bb1c5e08-9f7a-4012-89d4-31c0ae719e88",
+      "name": "Get Step",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1712,
+        640
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "Qu3wWADR0qH8hskO",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nlet step = 'q1';\nif (rows.length && rows[0].json && rows[0].json.coleta_step) {\n  step = rows[0].json.coleta_step;\n}\nconst base = $item(0).$node['Parse Response'].json;\nreturn [{ json: { ...base, coleta_step: step } }];\n"
+      },
+      "id": "5d3154da-4fd8-45ba-a5d7-a25e7c40ebec",
+      "name": "Extract Step",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1488,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{$json.coleta_step}}",
+              "rightValue": "q1",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "id": "9ef3afc4-0dfc-4869-83d3-22f5e550a53f"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "26c6b34b-3c78-41f6-bf61-67663f33ce70",
+      "name": "Step is q1?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1264,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{$json.coleta_step}}",
+              "rightValue": "q2",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "761c4fd9-bd81-4f50-a345-0ff0a078f96b",
+      "name": "Step is q2?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1040,
+        832
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const base = $item(0).$node['Parse Response'].json;\nconst n = base.parsed?.nps;\nif (n === null || n === undefined || n < 0 || n > 10) {\n  return [{ json: { error: 'invalid_nps', session_id: base.session_id, from: base.from } }];\n}\nreturn [{ json: { nps: n, session_id: base.session_id, from: base.from } }];\n"
+      },
+      "id": "a922f930-bb0f-4521-bc06-3f0ae88b1d16",
+      "name": "Q1 Validate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1040,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{$json.error}}",
+              "rightValue": "invalid_nps",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "051e2c80-39b1-4ce4-8e67-4bfa8c6d1b30",
+      "name": "Q1 Invalid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -816,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "m1",
+              "name": "opening_message",
+              "value": "Me manda um número de 0 a 10 🙂",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a31c6a95-e34b-4e30-917d-df0a9e1909f2",
+      "name": "Q1 Help Set",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -592,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.heymax.fit/message/sendText/trenobell",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "7FE740D978BC-436B-BA12-55589F0A4037"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"={{$item(0).$node['Parse Response'].json.from}}\",\n  \"text\": \"={{$json.opening_message}}\",\n  \"delay\": 0\n}",
+        "options": {}
+      },
+      "id": "f6651224-acc5-47c3-89df-6016c8baf839",
+      "name": "Send (Help Q1)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -368,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE trial_feedback SET nps=$2, last_user_message_at=now(), last_user_message=$2::text, coleta_step='q2' WHERE session_id=$1;",
+        "options": {
+          "queryReplacement": "={{ [ $json.session_id, $json.parsed?.nps ] }}"
+        }
+      },
+      "id": "e9a847dd-41f0-4061-a3a3-bd6ae2883a33",
+      "name": "Save Q1",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -592,
+        352
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "Qu3wWADR0qH8hskO",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "m2",
+              "name": "opening_message",
+              "value": "Legal! O que você MAIS gostou na aula/professor? Pode ser em 1 frase.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5781d258-bf69-406a-adae-84e782be4bf4",
+      "name": "Ask Q2",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -368,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.heymax.fit/message/sendText/trenobell",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "7FE740D978BC-436B-BA12-55589F0A4037"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"={{$item(0).$node['Parse Response'].json.from}}\",\n  \"text\": \"={{$json.opening_message}}\",\n  \"delay\": 0\n}",
+        "options": {}
+      },
+      "id": "73bd12cb-08e3-4137-b2fa-b554209069fb",
+      "name": "Send (Ask Q2)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -144,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { ...$json, resume_url: $execution.resumeUrl } }];"
+      },
+      "id": "4a103fef-ef76-4308-8680-41921b2d5216",
+      "name": "Attach Resume URL (Q2)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE trial_feedback SET resume_url = $2, last_bot_message_at = now() WHERE session_id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $json.session_id, $json.resume_url ] }}"
+        }
+      },
+      "id": "33a1bf6a-1536-4c4f-87d7-15244af432f2",
+      "name": "Update resume_url (Q2)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        304,
+        352
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "Qu3wWADR0qH8hskO",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "httpMethod": "POST",
+        "options": {}
+      },
+      "id": "2808299a-33dd-4dc1-999a-076be0e09da6",
+      "name": "Wait (Q2)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        528,
+        352
+      ],
+      "webhookId": "2e16cb3b-5021-4e97-bc4d-355c00b8718d"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE trial_feedback SET sugestao = COALESCE(sugestao,'') || CASE WHEN COALESCE(sugestao,'')='' THEN '' ELSE E'\\n' END || $2, last_user_message_at=now(), last_user_message=$2, coleta_step='q3' WHERE session_id=$1;",
+        "options": {
+          "queryReplacement": "={{ [ $json.session_id, $json.text ] }}"
+        }
+      },
+      "id": "0f829f9e-8ee0-434c-852a-945af0b2861e",
+      "name": "Q2 Save",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -816,
+        544
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "Qu3wWADR0qH8hskO",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "m3",
+              "name": "opening_message",
+              "value": "Show! E o que PODERIA melhorar? (1 frase)",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e1e38a41-33f7-42d0-a2d2-99c091cbe891",
+      "name": "Ask Q3",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -592,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.heymax.fit/message/sendText/trenobell",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "7FE740D978BC-436B-BA12-55589F0A4037"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"={{$item(0).$node['Parse Response'].json.from}}\",\n  \"text\": \"={{$json.opening_message}}\",\n  \"delay\": 0\n}",
+        "options": {}
+      },
+      "id": "5a2842f1-2f52-4012-9334-64c5f4a1c473",
+      "name": "Send (Ask Q3)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -368,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { ...$json, resume_url: $execution.resumeUrl } }];"
+      },
+      "id": "e3cefe13-f83d-4239-93ea-64a8ea2db1fa",
+      "name": "Attach Resume URL (Q3)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE trial_feedback SET resume_url = $2, last_bot_message_at = now() WHERE session_id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $json.session_id, $json.resume_url ] }}"
+        }
+      },
+      "id": "7f94c26d-413a-46d4-999d-648c1259e8de",
+      "name": "Update resume_url (Q3)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        80,
+        544
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "Qu3wWADR0qH8hskO",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "httpMethod": "POST",
+        "options": {}
+      },
+      "id": "c4eb36c8-295d-46ad-bc55-a3b78d895035",
+      "name": "Wait (Q3)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        304,
+        544
+      ],
+      "webhookId": "aa6c6289-fc33-4cdb-95a3-fc6bd74af87e"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{$json.coleta_step}}",
+              "rightValue": "q3",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3a7183a2-4396-4cc1-bc0a-b5f886071a81",
+      "name": "Step is q3?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -816,
+        928
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE trial_feedback SET sugestao = COALESCE(sugestao,'') || CASE WHEN COALESCE(sugestao,'')='' THEN '' ELSE E'\\n' END || '[Melhoria] '|| $2, last_user_message_at=now(), last_user_message=$2, coleta_step='q4' WHERE session_id=$1;",
+        "options": {
+          "queryReplacement": "={{ [ $json.session_id, $json.text ] }}"
+        }
+      },
+      "id": "d45c06a0-99f4-4816-85ce-df9db5b842b9",
+      "name": "Q3 Save",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -592,
+        736
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "Qu3wWADR0qH8hskO",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "m4",
+              "name": "opening_message",
+              "value": "Quer que eu já te ajude com a MATRÍCULA agora? (responda: sim ou não)",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e26abf05-01b4-4b70-8df1-4d48551797ad",
+      "name": "Ask Q4",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -368,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.heymax.fit/message/sendText/trenobell",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "7FE740D978BC-436B-BA12-55589F0A4037"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"={{$item(0).$node['Parse Response'].json.from}}\",\n  \"text\": \"={{$json.opening_message}}\",\n  \"delay\": 0\n}",
+        "options": {}
+      },
+      "id": "d496ab02-1a48-4f32-b59d-3efb159dbd8b",
+      "name": "Send (Ask Q4)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -144,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { ...$json, resume_url: $execution.resumeUrl } }];"
+      },
+      "id": "d1dabcba-6be6-4ae8-aaf9-721f37908aee",
+      "name": "Attach Resume URL (Q4)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE trial_feedback SET resume_url = $2, last_bot_message_at = now() WHERE session_id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $json.session_id, $json.resume_url ] }}"
+        }
+      },
+      "id": "c29fb2f9-f522-4feb-b583-0f81a0bb3927",
+      "name": "Update resume_url (Q4)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        304,
+        736
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "Qu3wWADR0qH8hskO",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "httpMethod": "POST",
+        "options": {}
+      },
+      "id": "ce440e5b-bd4c-4855-9776-1f11e635690f",
+      "name": "Wait (Q4)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        528,
+        736
+      ],
+      "webhookId": "4d99a220-737f-4261-a2ff-fa41b9c2b831"
+    },
+    {
+      "parameters": {
+        "jsCode": "const base = $item(0).$node['Parse Response'].json;\nconst yn = base.parsed?.bool;\nreturn [{ json: { session_id: base.session_id, from: base.from, intent: (yn === true ? true : (yn === false ? false : null)) } }];\n"
+      },
+      "id": "367eaade-c80b-4b05-97fb-0d8d971a25f4",
+      "name": "Q4 Validate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -592,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{$json.intent}}",
+              "rightValue": "=",
+              "operator": {
+                "type": "boolean",
+                "operation": "null",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "baeb73c9-90a3-4e8a-9333-84c6e922f91d",
+      "name": "Q4 Invalid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -368,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "m5",
+              "name": "opening_message",
+              "value": "Responda apenas: sim ou não 🙂",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9449cd65-faf8-4b6e-86a1-f80d0f485189",
+      "name": "Q4 Help Set",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -144,
+        928
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.heymax.fit/message/sendText/trenobell",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "7FE740D978BC-436B-BA12-55589F0A4037"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"={{$item(0).$node['Parse Response'].json.from}}\",\n  \"text\": \"={{$json.opening_message}}\",\n  \"delay\": 0\n}",
+        "options": {}
+      },
+      "id": "9d6c5d08-664b-446f-bb8d-b66bb22f70fc",
+      "name": "Send (Help Q4)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        80,
+        928
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { ...$json, resume_url: $execution.resumeUrl } }];"
+      },
+      "id": "be2a6998-01c1-4e89-9b9d-6eef9b53c529",
+      "name": "Attach Resume URL (Q4 Help)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        928
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE trial_feedback SET resume_url = $2, last_bot_message_at = now() WHERE session_id = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $json.session_id, $json.resume_url ] }}"
+        }
+      },
+      "id": "130459a4-b2b0-4cec-b18c-a90a728ada43",
+      "name": "Update resume_url (Q4 Help)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        528,
+        928
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "Qu3wWADR0qH8hskO",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "httpMethod": "POST",
+        "options": {}
+      },
+      "id": "6e2478db-e9ba-4711-ad06-d3f91a33e7a5",
+      "name": "Wait (Q4 Help)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        752,
+        928
+      ],
+      "webhookId": "bcd01dae-f9f3-4f07-8131-a88d02824d98"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE trial_feedback SET intent_matricula=$2, status_coleta='completo', last_user_message_at=now(), last_user_message=CASE WHEN $2 THEN 'sim' ELSE 'não' END WHERE session_id=$1;",
+        "options": {
+          "queryReplacement": "={{ [ $json.session_id, $json.parsed?.bool ] }}"
+        }
+      },
+      "id": "73905e66-b758-49b1-a0e3-dc50fb7b0ba5",
+      "name": "Q4 Save + Complete",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -144,
+        1120
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "Qu3wWADR0qH8hskO",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "m6",
+              "name": "opening_message",
+              "value": "Obrigado pelo feedback! Se precisar de algo, é só me chamar. 👋",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "dcf711e5-7112-46eb-a22c-5b8b480f88c9",
+      "name": "Thank You",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        80,
+        1120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.heymax.fit/message/sendText/trenobell",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "7FE740D978BC-436B-BA12-55589F0A4037"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"={{$item(0).$node['Parse Response'].json.from}}\",\n  \"text\": \"={{$json.opening_message}}\",\n  \"delay\": 0\n}",
+        "options": {}
+      },
+      "id": "9b8592d9-33dc-47c5-9c3f-cb6e54c78113",
+      "name": "Send (Thank You)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        304,
+        1120
+      ]
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "session_id"
+            },
+            {
+              "name": "from"
+            },
+            {
+              "name": "text"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -2160,
+        640
+      ],
+      "id": "a556cd4f-d303-417f-a61e-148fb60373b2",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "connections": {
+    "Parse Response": {
+      "main": [
+        [
+          {
+            "node": "Get Step",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Step": {
+      "main": [
+        [
+          {
+            "node": "Extract Step",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Step": {
+      "main": [
+        [
+          {
+            "node": "Step is q1?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step is q1?": {
+      "main": [
+        [
+          {
+            "node": "Q1 Validate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Step is q2?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Q1 Validate": {
+      "main": [
+        [
+          {
+            "node": "Q1 Invalid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Q1 Invalid?": {
+      "main": [
+        [
+          {
+            "node": "Q1 Help Set",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save Q1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Q1 Help Set": {
+      "main": [
+        [
+          {
+            "node": "Send (Help Q1)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Q1": {
+      "main": [
+        [
+          {
+            "node": "Ask Q2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask Q2": {
+      "main": [
+        [
+          {
+            "node": "Send (Ask Q2)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send (Ask Q2)": {
+      "main": [
+        [
+          {
+            "node": "Attach Resume URL (Q2)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Resume URL (Q2)": {
+      "main": [
+        [
+          {
+            "node": "Update resume_url (Q2)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update resume_url (Q2)": {
+      "main": [
+        [
+          {
+            "node": "Wait (Q2)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step is q2?": {
+      "main": [
+        [
+          {
+            "node": "Q2 Save",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Step is q3?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Q2 Save": {
+      "main": [
+        [
+          {
+            "node": "Ask Q3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask Q3": {
+      "main": [
+        [
+          {
+            "node": "Send (Ask Q3)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send (Ask Q3)": {
+      "main": [
+        [
+          {
+            "node": "Attach Resume URL (Q3)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Resume URL (Q3)": {
+      "main": [
+        [
+          {
+            "node": "Update resume_url (Q3)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update resume_url (Q3)": {
+      "main": [
+        [
+          {
+            "node": "Wait (Q3)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step is q3?": {
+      "main": [
+        [
+          {
+            "node": "Q3 Save",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Q4 Validate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Q3 Save": {
+      "main": [
+        [
+          {
+            "node": "Ask Q4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask Q4": {
+      "main": [
+        [
+          {
+            "node": "Send (Ask Q4)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send (Ask Q4)": {
+      "main": [
+        [
+          {
+            "node": "Attach Resume URL (Q4)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Resume URL (Q4)": {
+      "main": [
+        [
+          {
+            "node": "Update resume_url (Q4)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update resume_url (Q4)": {
+      "main": [
+        [
+          {
+            "node": "Wait (Q4)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Q4 Validate": {
+      "main": [
+        [
+          {
+            "node": "Q4 Invalid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Q4 Invalid?": {
+      "main": [
+        [
+          {
+            "node": "Q4 Help Set",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Q4 Save + Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Q4 Help Set": {
+      "main": [
+        [
+          {
+            "node": "Send (Help Q4)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send (Help Q4)": {
+      "main": [
+        [
+          {
+            "node": "Attach Resume URL (Q4 Help)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Resume URL (Q4 Help)": {
+      "main": [
+        [
+          {
+            "node": "Update resume_url (Q4 Help)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update resume_url (Q4 Help)": {
+      "main": [
+        [
+          {
+            "node": "Wait (Q4 Help)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Q4 Save + Complete": {
+      "main": [
+        [
+          {
+            "node": "Thank You",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Thank You": {
+      "main": [
+        [
+          {
+            "node": "Send (Thank You)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Parse Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "5ab4f6c3-e081-4eef-b223-e2bc5e09fc40",
+  "activeVersionId": "5ab4f6c3-e081-4eef-b223-e2bc5e09fc40",
+  "versionCounter": 14,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-03-02T00:59:50.426Z",
+      "createdAt": "2026-03-02T00:59:50.426Z",
+      "role": "workflow:owner",
+      "workflowId": "vlPyFCr3gVldbIcj",
+      "projectId": "JwjbR4bx5YBkAPVP",
+      "project": {
+        "updatedAt": "2025-04-22T00:05:57.581Z",
+        "createdAt": "2025-04-21T23:56:45.246Z",
+        "id": "JwjbR4bx5YBkAPVP",
+        "name": "Mardo Carneiro <mardodavid@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "51879556-966c-42e5-bead-ed1162a850f8"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-03-19T15:16:29.232Z",
+    "createdAt": "2026-03-19T15:16:13.753Z",
+    "versionId": "5ab4f6c3-e081-4eef-b223-e2bc5e09fc40",
+    "workflowId": "vlPyFCr3gVldbIcj",
+    "nodes": [
+      {
+        "parameters": {
+          "jsCode": "// Espera receber { session_id, from, text } como entrada deste sub-workflow\nconst msg = $json || {};\n\nconst sessionId = String(msg.session_id || '').trim();\nconst from      = String(msg.from || '').replace(/\\D/g,'');\nconst text      = String(msg.text || '').trim();\n\n// helpers\nconst toNumberOrNull = (s) => (/^\\d+$/.test(s) ? Number(s) : null);\nconst yesNo = (s) => {\n  const t = s.toLowerCase();\n  if (/(sim|s|yes|y)/.test(t))  return true;\n  if (/(não|nao|n|no)/.test(t)) return false;\n  return null;\n};\n\nreturn [{\n  json: {\n    session_id: sessionId,\n    from,\n    text,\n    parsed: { nps: toNumberOrNull(text), bool: yesNo(text) }\n  }\n}];\n"
+        },
+        "id": "28b30168-c432-41c0-90fc-abcb4c65f4d4",
+        "name": "Parse Response",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -1936,
+          640
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "SELECT session_id, coleta_step FROM trial_feedback WHERE session_id = $1;",
+          "options": {
+            "queryReplacement": "={{ [ $json.session_id ] }}"
+          }
+        },
+        "id": "bb1c5e08-9f7a-4012-89d4-31c0ae719e88",
+        "name": "Get Step",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          -1712,
+          640
+        ],
+        "credentials": {
+          "postgres": {
+            "id": "Qu3wWADR0qH8hskO",
+            "name": "Postgres account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const rows = $input.all();\nlet step = 'q1';\nif (rows.length && rows[0].json && rows[0].json.coleta_step) {\n  step = rows[0].json.coleta_step;\n}\nconst base = $item(0).$node['Parse Response'].json;\nreturn [{ json: { ...base, coleta_step: step } }];\n"
+        },
+        "id": "5d3154da-4fd8-45ba-a5d7-a25e7c40ebec",
+        "name": "Extract Step",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -1488,
+          640
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "leftValue": "={{$json.coleta_step}}",
+                "rightValue": "q1",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                },
+                "id": "9ef3afc4-0dfc-4869-83d3-22f5e550a53f"
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "26c6b34b-3c78-41f6-bf61-67663f33ce70",
+        "name": "Step is q1?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -1264,
+          640
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "leftValue": "={{$json.coleta_step}}",
+                "rightValue": "q2",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "761c4fd9-bd81-4f50-a345-0ff0a078f96b",
+        "name": "Step is q2?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -1040,
+          832
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const base = $item(0).$node['Parse Response'].json;\nconst n = base.parsed?.nps;\nif (n === null || n === undefined || n < 0 || n > 10) {\n  return [{ json: { error: 'invalid_nps', session_id: base.session_id, from: base.from } }];\n}\nreturn [{ json: { nps: n, session_id: base.session_id, from: base.from } }];\n"
+        },
+        "id": "a922f930-bb0f-4521-bc06-3f0ae88b1d16",
+        "name": "Q1 Validate",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -1040,
+          256
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "leftValue": "={{$json.error}}",
+                "rightValue": "invalid_nps",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "051e2c80-39b1-4ce4-8e67-4bfa8c6d1b30",
+        "name": "Q1 Invalid?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -816,
+          256
+        ]
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "m1",
+                "name": "opening_message",
+                "value": "Me manda um número de 0 a 10 🙂",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "a31c6a95-e34b-4e30-917d-df0a9e1909f2",
+        "name": "Q1 Help Set",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          -592,
+          160
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://evo.heymax.fit/message/sendText/trenobell",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "7FE740D978BC-436B-BA12-55589F0A4037"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"number\": \"={{$item(0).$node['Parse Response'].json.from}}\",\n  \"text\": \"={{$json.opening_message}}\",\n  \"delay\": 0\n}",
+          "options": {}
+        },
+        "id": "f6651224-acc5-47c3-89df-6016c8baf839",
+        "name": "Send (Help Q1)",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          -368,
+          160
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE trial_feedback SET nps=$2, last_user_message_at=now(), last_user_message=$2::text, coleta_step='q2' WHERE session_id=$1;",
+          "options": {
+            "queryReplacement": "={{ [ $json.session_id, $json.parsed?.nps ] }}"
+          }
+        },
+        "id": "e9a847dd-41f0-4061-a3a3-bd6ae2883a33",
+        "name": "Save Q1",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          -592,
+          352
+        ],
+        "credentials": {
+          "postgres": {
+            "id": "Qu3wWADR0qH8hskO",
+            "name": "Postgres account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "m2",
+                "name": "opening_message",
+                "value": "Legal! O que você MAIS gostou na aula/professor? Pode ser em 1 frase.",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "5781d258-bf69-406a-adae-84e782be4bf4",
+        "name": "Ask Q2",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          -368,
+          352
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://evo.heymax.fit/message/sendText/trenobell",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "7FE740D978BC-436B-BA12-55589F0A4037"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"number\": \"={{$item(0).$node['Parse Response'].json.from}}\",\n  \"text\": \"={{$json.opening_message}}\",\n  \"delay\": 0\n}",
+          "options": {}
+        },
+        "id": "73bd12cb-08e3-4137-b2fa-b554209069fb",
+        "name": "Send (Ask Q2)",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          -144,
+          352
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "return [{ json: { ...$json, resume_url: $execution.resumeUrl } }];"
+        },
+        "id": "4a103fef-ef76-4308-8680-41921b2d5216",
+        "name": "Attach Resume URL (Q2)",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          80,
+          352
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE trial_feedback SET resume_url = $2, last_bot_message_at = now() WHERE session_id = $1;",
+          "options": {
+            "queryReplacement": "={{ [ $json.resume_url, $json.session_id ] }}"
+          }
+        },
+        "id": "33a1bf6a-1536-4c4f-87d7-15244af432f2",
+        "name": "Update resume_url (Q2)",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          304,
+          352
+        ],
+        "credentials": {
+          "postgres": {
+            "id": "Qu3wWADR0qH8hskO",
+            "name": "Postgres account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "resume": "webhook",
+          "httpMethod": "POST",
+          "options": {}
+        },
+        "id": "2808299a-33dd-4dc1-999a-076be0e09da6",
+        "name": "Wait (Q2)",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          528,
+          352
+        ],
+        "webhookId": "2e16cb3b-5021-4e97-bc4d-355c00b8718d"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE trial_feedback SET sugestao = COALESCE(sugestao,'') || CASE WHEN COALESCE(sugestao,'')='' THEN '' ELSE E'\\n' END || $2, last_user_message_at=now(), last_user_message=$2, coleta_step='q3' WHERE session_id=$1;",
+          "options": {
+            "queryReplacement": "={{ [ $json.session_id, $json.text ] }}"
+          }
+        },
+        "id": "0f829f9e-8ee0-434c-852a-945af0b2861e",
+        "name": "Q2 Save",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          -816,
+          544
+        ],
+        "credentials": {
+          "postgres": {
+            "id": "Qu3wWADR0qH8hskO",
+            "name": "Postgres account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "m3",
+                "name": "opening_message",
+                "value": "Show! E o que PODERIA melhorar? (1 frase)",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "e1e38a41-33f7-42d0-a2d2-99c091cbe891",
+        "name": "Ask Q3",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          -592,
+          544
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://evo.heymax.fit/message/sendText/trenobell",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "7FE740D978BC-436B-BA12-55589F0A4037"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"number\": \"={{$item(0).$node['Parse Response'].json.from}}\",\n  \"text\": \"={{$json.opening_message}}\",\n  \"delay\": 0\n}",
+          "options": {}
+        },
+        "id": "5a2842f1-2f52-4012-9334-64c5f4a1c473",
+        "name": "Send (Ask Q3)",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          -368,
+          544
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "return [{ json: { ...$json, resume_url: $execution.resumeUrl } }];"
+        },
+        "id": "e3cefe13-f83d-4239-93ea-64a8ea2db1fa",
+        "name": "Attach Resume URL (Q3)",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -144,
+          544
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE trial_feedback SET resume_url = $2, last_bot_message_at = now() WHERE session_id = $1;",
+          "options": {
+            "queryReplacement": "={{ [ $json.resume_url, $json.session_id ] }}"
+          }
+        },
+        "id": "7f94c26d-413a-46d4-999d-648c1259e8de",
+        "name": "Update resume_url (Q3)",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          80,
+          544
+        ],
+        "credentials": {
+          "postgres": {
+            "id": "Qu3wWADR0qH8hskO",
+            "name": "Postgres account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "resume": "webhook",
+          "httpMethod": "POST",
+          "options": {}
+        },
+        "id": "c4eb36c8-295d-46ad-bc55-a3b78d895035",
+        "name": "Wait (Q3)",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          304,
+          544
+        ],
+        "webhookId": "aa6c6289-fc33-4cdb-95a3-fc6bd74af87e"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "leftValue": "={{$json.coleta_step}}",
+                "rightValue": "q3",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "3a7183a2-4396-4cc1-bc0a-b5f886071a81",
+        "name": "Step is q3?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -816,
+          928
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE trial_feedback SET sugestao = COALESCE(sugestao,'') || CASE WHEN COALESCE(sugestao,'')='' THEN '' ELSE E'\\n' END || '[Melhoria] '|| $2, last_user_message_at=now(), last_user_message=$2, coleta_step='q4' WHERE session_id=$1;",
+          "options": {
+            "queryReplacement": "={{ [ $json.session_id, $json.text ] }}"
+          }
+        },
+        "id": "d45c06a0-99f4-4816-85ce-df9db5b842b9",
+        "name": "Q3 Save",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          -592,
+          736
+        ],
+        "credentials": {
+          "postgres": {
+            "id": "Qu3wWADR0qH8hskO",
+            "name": "Postgres account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "m4",
+                "name": "opening_message",
+                "value": "Quer que eu já te ajude com a MATRÍCULA agora? (responda: sim ou não)",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "e26abf05-01b4-4b70-8df1-4d48551797ad",
+        "name": "Ask Q4",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          -368,
+          736
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://evo.heymax.fit/message/sendText/trenobell",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "7FE740D978BC-436B-BA12-55589F0A4037"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"number\": \"={{$item(0).$node['Parse Response'].json.from}}\",\n  \"text\": \"={{$json.opening_message}}\",\n  \"delay\": 0\n}",
+          "options": {}
+        },
+        "id": "d496ab02-1a48-4f32-b59d-3efb159dbd8b",
+        "name": "Send (Ask Q4)",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          -144,
+          736
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "return [{ json: { ...$json, resume_url: $execution.resumeUrl } }];"
+        },
+        "id": "d1dabcba-6be6-4ae8-aaf9-721f37908aee",
+        "name": "Attach Resume URL (Q4)",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          80,
+          736
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE trial_feedback SET resume_url = $2, last_bot_message_at = now() WHERE session_id = $1;",
+          "options": {
+            "queryReplacement": "={{ [ $json.resume_url, $json.session_id ] }}"
+          }
+        },
+        "id": "c29fb2f9-f522-4feb-b583-0f81a0bb3927",
+        "name": "Update resume_url (Q4)",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          304,
+          736
+        ],
+        "credentials": {
+          "postgres": {
+            "id": "Qu3wWADR0qH8hskO",
+            "name": "Postgres account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "resume": "webhook",
+          "httpMethod": "POST",
+          "options": {}
+        },
+        "id": "ce440e5b-bd4c-4855-9776-1f11e635690f",
+        "name": "Wait (Q4)",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          528,
+          736
+        ],
+        "webhookId": "4d99a220-737f-4261-a2ff-fa41b9c2b831"
+      },
+      {
+        "parameters": {
+          "jsCode": "const base = $item(0).$node['Parse Response'].json;\nconst yn = base.parsed?.bool;\nreturn [{ json: { session_id: base.session_id, from: base.from, intent: (yn === true ? true : (yn === false ? false : null)) } }];\n"
+        },
+        "id": "367eaade-c80b-4b05-97fb-0d8d971a25f4",
+        "name": "Q4 Validate",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -592,
+          1024
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "leftValue": "={{$json.intent}}",
+                "rightValue": "=",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "null",
+                  "singleValue": true
+                }
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "baeb73c9-90a3-4e8a-9333-84c6e922f91d",
+        "name": "Q4 Invalid?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -368,
+          1024
+        ]
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "m5",
+                "name": "opening_message",
+                "value": "Responda apenas: sim ou não 🙂",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "9449cd65-faf8-4b6e-86a1-f80d0f485189",
+        "name": "Q4 Help Set",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          -144,
+          928
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://evo.heymax.fit/message/sendText/trenobell",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "7FE740D978BC-436B-BA12-55589F0A4037"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"number\": \"={{$item(0).$node['Parse Response'].json.from}}\",\n  \"text\": \"={{$json.opening_message}}\",\n  \"delay\": 0\n}",
+          "options": {}
+        },
+        "id": "9d6c5d08-664b-446f-bb8d-b66bb22f70fc",
+        "name": "Send (Help Q4)",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          80,
+          928
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "return [{ json: { ...$json, resume_url: $execution.resumeUrl } }];"
+        },
+        "id": "be2a6998-01c1-4e89-9b9d-6eef9b53c529",
+        "name": "Attach Resume URL (Q4 Help)",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          304,
+          928
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE trial_feedback SET resume_url = $2, last_bot_message_at = now() WHERE session_id = $1;",
+          "options": {
+            "queryReplacement": "={{ [ $json.resume_url, $json.session_id ] }}"
+          }
+        },
+        "id": "130459a4-b2b0-4cec-b18c-a90a728ada43",
+        "name": "Update resume_url (Q4 Help)",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          528,
+          928
+        ],
+        "credentials": {
+          "postgres": {
+            "id": "Qu3wWADR0qH8hskO",
+            "name": "Postgres account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "resume": "webhook",
+          "httpMethod": "POST",
+          "options": {}
+        },
+        "id": "6e2478db-e9ba-4711-ad06-d3f91a33e7a5",
+        "name": "Wait (Q4 Help)",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          752,
+          928
+        ],
+        "webhookId": "bcd01dae-f9f3-4f07-8131-a88d02824d98"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE trial_feedback SET intent_matricula=$2, status_coleta='completo', last_user_message_at=now(), last_user_message=CASE WHEN $2 THEN 'sim' ELSE 'não' END WHERE session_id=$1;",
+          "options": {
+            "queryReplacement": "={{ [ $json.session_id, $json.parsed?.bool ] }}"
+          }
+        },
+        "id": "73905e66-b758-49b1-a0e3-dc50fb7b0ba5",
+        "name": "Q4 Save + Complete",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          -144,
+          1120
+        ],
+        "credentials": {
+          "postgres": {
+            "id": "Qu3wWADR0qH8hskO",
+            "name": "Postgres account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "m6",
+                "name": "opening_message",
+                "value": "Obrigado pelo feedback! Se precisar de algo, é só me chamar. 👋",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "dcf711e5-7112-46eb-a22c-5b8b480f88c9",
+        "name": "Thank You",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          80,
+          1120
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://evo.heymax.fit/message/sendText/trenobell",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "7FE740D978BC-436B-BA12-55589F0A4037"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"number\": \"={{$item(0).$node['Parse Response'].json.from}}\",\n  \"text\": \"={{$json.opening_message}}\",\n  \"delay\": 0\n}",
+          "options": {}
+        },
+        "id": "9b8592d9-33dc-47c5-9c3f-cb6e54c78113",
+        "name": "Send (Thank You)",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          304,
+          1120
+        ]
+      },
+      {
+        "parameters": {
+          "workflowInputs": {
+            "values": [
+              {
+                "name": "session_id"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          -2160,
+          640
+        ],
+        "id": "a556cd4f-d303-417f-a61e-148fb60373b2",
+        "name": "When Executed by Another Workflow"
+      }
+    ],
+    "connections": {
+      "Parse Response": {
+        "main": [
+          [
+            {
+              "node": "Get Step",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Step": {
+        "main": [
+          [
+            {
+              "node": "Extract Step",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract Step": {
+        "main": [
+          [
+            {
+              "node": "Step is q1?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Step is q1?": {
+        "main": [
+          [
+            {
+              "node": "Q1 Validate",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Step is q2?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Q1 Validate": {
+        "main": [
+          [
+            {
+              "node": "Q1 Invalid?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Q1 Invalid?": {
+        "main": [
+          [
+            {
+              "node": "Q1 Help Set",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Save Q1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Q1 Help Set": {
+        "main": [
+          [
+            {
+              "node": "Send (Help Q1)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Save Q1": {
+        "main": [
+          [
+            {
+              "node": "Ask Q2",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ask Q2": {
+        "main": [
+          [
+            {
+              "node": "Send (Ask Q2)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send (Ask Q2)": {
+        "main": [
+          [
+            {
+              "node": "Attach Resume URL (Q2)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Attach Resume URL (Q2)": {
+        "main": [
+          [
+            {
+              "node": "Update resume_url (Q2)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update resume_url (Q2)": {
+        "main": [
+          [
+            {
+              "node": "Wait (Q2)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Step is q2?": {
+        "main": [
+          [
+            {
+              "node": "Q2 Save",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Step is q3?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Q2 Save": {
+        "main": [
+          [
+            {
+              "node": "Ask Q3",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ask Q3": {
+        "main": [
+          [
+            {
+              "node": "Send (Ask Q3)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send (Ask Q3)": {
+        "main": [
+          [
+            {
+              "node": "Attach Resume URL (Q3)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Attach Resume URL (Q3)": {
+        "main": [
+          [
+            {
+              "node": "Update resume_url (Q3)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update resume_url (Q3)": {
+        "main": [
+          [
+            {
+              "node": "Wait (Q3)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Step is q3?": {
+        "main": [
+          [
+            {
+              "node": "Q3 Save",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Q4 Validate",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Q3 Save": {
+        "main": [
+          [
+            {
+              "node": "Ask Q4",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ask Q4": {
+        "main": [
+          [
+            {
+              "node": "Send (Ask Q4)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send (Ask Q4)": {
+        "main": [
+          [
+            {
+              "node": "Attach Resume URL (Q4)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Attach Resume URL (Q4)": {
+        "main": [
+          [
+            {
+              "node": "Update resume_url (Q4)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update resume_url (Q4)": {
+        "main": [
+          [
+            {
+              "node": "Wait (Q4)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Q4 Validate": {
+        "main": [
+          [
+            {
+              "node": "Q4 Invalid?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Q4 Invalid?": {
+        "main": [
+          [
+            {
+              "node": "Q4 Help Set",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Q4 Save + Complete",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Q4 Help Set": {
+        "main": [
+          [
+            {
+              "node": "Send (Help Q4)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send (Help Q4)": {
+        "main": [
+          [
+            {
+              "node": "Attach Resume URL (Q4 Help)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Attach Resume URL (Q4 Help)": {
+        "main": [
+          [
+            {
+              "node": "Update resume_url (Q4 Help)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update resume_url (Q4 Help)": {
+        "main": [
+          [
+            {
+              "node": "Wait (Q4 Help)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Q4 Save + Complete": {
+        "main": [
+          [
+            {
+              "node": "Thank You",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Thank You": {
+        "main": [
+          [
+            {
+              "node": "Send (Thank You)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "When Executed by Another Workflow": {
+        "main": [
+          [
+            {
+              "node": "Parse Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Mardo Carneiro",
+    "name": "Version 5ab4f6c3",
+    "description": "",
+    "autosaved": true,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-03-19T16:47:58.005Z",
+        "id": 464,
+        "workflowId": "vlPyFCr3gVldbIcj",
+        "versionId": "5ab4f6c3-e081-4eef-b223-e2bc5e09fc40",
+        "event": "deactivated",
+        "userId": "51879556-966c-42e5-bead-ed1162a850f8"
+      },
+      {
+        "createdAt": "2026-03-19T16:47:58.051Z",
+        "id": 465,
+        "workflowId": "vlPyFCr3gVldbIcj",
+        "versionId": "5ab4f6c3-e081-4eef-b223-e2bc5e09fc40",
+        "event": "activated",
+        "userId": "51879556-966c-42e5-bead-ed1162a850f8"
+      },
+      {
+        "createdAt": "2026-03-19T15:16:29.228Z",
+        "id": 462,
+        "workflowId": "vlPyFCr3gVldbIcj",
+        "versionId": "5ab4f6c3-e081-4eef-b223-e2bc5e09fc40",
+        "event": "activated",
+        "userId": "51879556-966c-42e5-bead-ed1162a850f8"
+      }
+    ]
+  }
+}

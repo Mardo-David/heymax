@@ -1,0 +1,355 @@
+{
+  "name": "[TRIGGER] Resposta Prospect",
+  "nodes": [
+    {
+      "id": "a1b2c3d4-0001-0000-0000-000000000001",
+      "name": "Webhook Prospect",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "trenobell-prospect-response",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "trenobell/prospect-response",
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0002-0000-0000-000000000002",
+      "name": "Normalizar Entrada",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        460,
+        300
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1000001",
+              "name": "phone",
+              "value": "={{ $json.body.data.key.remoteJid.replace('@s.whatsapp.net', '').replace('@g.us', '') }}",
+              "type": "string"
+            },
+            {
+              "id": "f1000002",
+              "name": "text",
+              "value": "={{ $json.body.data.message?.conversation ?? $json.body.data.message?.extendedTextMessage?.text ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "f1000003",
+              "name": "from_me",
+              "value": "={{ $json.body.data.key.fromMe }}",
+              "type": "boolean"
+            },
+            {
+              "id": "f1000004",
+              "name": "message_type",
+              "value": "={{ $json.body.data.messageType }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0003-0000-0000-000000000003",
+      "name": "Ignorar fromMe ou grupo",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        680,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c0000001",
+              "leftValue": "={{ $json.from_me }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "false"
+              }
+            },
+            {
+              "id": "c0000002",
+              "leftValue": "={{ $json.message_type }}",
+              "rightValue": "conversation",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0004-0000-0000-000000000004",
+      "name": "Buscar sessao parcial",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        900,
+        220
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "Qu3wWADR0qH8hskO",
+          "name": "Postgres account"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT session_id, coleta_step FROM trial_feedback WHERE phone = $1 AND status_coleta = 'parcial' ORDER BY started_at DESC LIMIT 1",
+        "options": {
+          "queryReplacement": "={{ [ $json.phone ] }}"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0005-0000-0000-000000000005",
+      "name": "Tem sessao parcial?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        220
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c0000003",
+              "leftValue": "={{ $json.session_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0006-0000-0000-000000000006",
+      "name": "Montar payload SUB",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1340,
+        160
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f2000001",
+              "name": "session_id",
+              "value": "={{ $json.session_id }}",
+              "type": "string"
+            },
+            {
+              "id": "f2000002",
+              "name": "from",
+              "value": "={{ $('Normalizar Entrada').item.json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "f2000003",
+              "name": "text",
+              "value": "={{ $('Normalizar Entrada').item.json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0007-0000-0000-000000000007",
+      "name": "Chamar SUB Q1-Q4",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        160
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "vlPyFCr3gVldbIcj",
+          "mode": "list",
+          "cachedResultName": "[SUB] Coleta de Feedback Q1-Q4"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "session_id": "={{ $json.session_id }}",
+            "from": "={{ $json.from }}",
+            "text": "={{ $json.text }}"
+          },
+          "matchingColumns": [
+            "session_id"
+          ],
+          "schema": [
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "required": true,
+              "defaultMatch": true,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "from",
+              "displayName": "from",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "text",
+              "displayName": "text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": false,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0008-0000-0000-000000000008",
+      "name": "Sem sessao - ignorar",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        380
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Webhook Prospect": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Entrada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Entrada": {
+      "main": [
+        [
+          {
+            "node": "Ignorar fromMe ou grupo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ignorar fromMe ou grupo": {
+      "main": [
+        [
+          {
+            "node": "Buscar sessao parcial",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Buscar sessao parcial": {
+      "main": [
+        [
+          {
+            "node": "Tem sessao parcial?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem sessao parcial?": {
+      "main": [
+        [
+          {
+            "node": "Montar payload SUB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sem sessao - ignorar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar payload SUB": {
+      "main": [
+        [
+          {
+            "node": "Chamar SUB Q1-Q4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "instanceId": ""
+  },
+  "pinData": {}
+}
