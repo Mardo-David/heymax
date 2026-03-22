@@ -59,6 +59,7 @@
     {
       "parameters": {
         "conditions": {
+          "combinator": "and",
           "options": {
             "caseSensitive": true,
             "leftValue": "",
@@ -67,16 +68,15 @@
           },
           "conditions": [
             {
-              "leftValue": "={{$json.coleta_step}}",
+              "id": "717e767d-5cfd-4e64-a56b-c8ffc40e8618",
+              "leftValue": "={{.coleta_step}}",
               "rightValue": "q1",
               "operator": {
                 "type": "string",
                 "operation": "equals"
-              },
-              "id": "9ef3afc4-0dfc-4869-83d3-22f5e550a53f"
+              }
             }
-          ],
-          "combinator": "and"
+          ]
         },
         "options": {}
       },
@@ -93,9 +93,16 @@
       "parameters": {
         "conditions": {
           "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
           "conditions": [
             {
-              "leftValue": "={{$json.coleta_step}}",
+              "id": "770146cc-f89d-484b-b0ff-2a953965ed2d",
+              "leftValue": "={{.coleta_step}}",
               "rightValue": "q2",
               "operator": {
                 "type": "string",
@@ -132,9 +139,16 @@
       "parameters": {
         "conditions": {
           "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
           "conditions": [
             {
-              "leftValue": "={{$json.error}}",
+              "id": "931651e8-4e74-4153-bb24-e619182e0ce0",
+              "leftValue": "={{.error}}",
               "rightValue": "invalid_nps",
               "operator": {
                 "type": "string",
@@ -458,9 +472,16 @@
       "parameters": {
         "conditions": {
           "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
           "conditions": [
             {
-              "leftValue": "={{$json.coleta_step}}",
+              "id": "97fc17df-d040-4abc-a4ea-1a20305a514a",
+              "leftValue": "={{.coleta_step}}",
               "rightValue": "q3",
               "operator": {
                 "type": "string",
@@ -622,13 +643,20 @@
       "parameters": {
         "conditions": {
           "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
           "conditions": [
             {
-              "leftValue": "={{$json.intent}}",
-              "rightValue": "=",
+              "id": "effde3bc-0e51-448b-8941-445bdb3253e5",
+              "leftValue": "={{.intent}}",
+              "rightValue": "",
               "operator": {
-                "type": "boolean",
-                "operation": "null",
+                "type": "string",
+                "operation": "empty",
                 "singleValue": true
               }
             }
