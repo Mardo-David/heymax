@@ -1,0 +1,1314 @@
+{
+  "updatedAt": "2026-04-01T19:29:27.584Z",
+  "createdAt": "2026-03-20T18:01:22.943Z",
+  "id": "C3nqo6eUT8RePxEd",
+  "name": "[TRIGGER] Resposta Prospect",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "trenobell/prospect-response",
+        "options": {}
+      },
+      "id": "2ce4aa72-a6bb-45b8-95e2-34abb66b63fb",
+      "name": "Webhook Prospect",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -3232,
+        624
+      ],
+      "webhookId": "trenobell-prospect-response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1000001",
+              "name": "phone",
+              "value": "={{ (() => {\n  const raw = $json.body.data.key.remoteJid.replace('@s.whatsapp.net','').replace('@g.us','');\n  const digits = raw.replace(/\\D/g,'');\n  if (digits.length === 12 && digits.startsWith('55')) {\n    const ddd = digits.slice(2,4);\n    const numero = digits.slice(4);\n    return '55' + ddd + '9' + numero;\n  }\n  return digits;\n})() }}",
+              "type": "string"
+            },
+            {
+              "id": "f1000002",
+              "name": "text",
+              "value": "={{ $json.body.data.message?.conversation ?? $json.body.data.message?.extendedTextMessage?.text ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "f1000003",
+              "name": "from_me",
+              "value": "={{ $json.body.data.key.fromMe }}",
+              "type": "boolean"
+            },
+            {
+              "id": "f1000004",
+              "name": "message_type",
+              "value": "={{ $json.body.data.messageType }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "be11d56c-0d82-49f6-bf4a-feec22f1e834",
+      "name": "Normalizar Entrada",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -3008,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c0000001",
+              "leftValue": "={{ $json.from_me }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "false"
+              }
+            },
+            {
+              "id": "c0000002",
+              "leftValue": "={{ $json.message_type }}",
+              "rightValue": "conversation",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c66bede1-ffab-4a52-9270-3aafa13fd036",
+      "name": "Ignorar fromMe ou grupo",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2784,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT session_id, coleta_step FROM trial_feedback \nWHERE phone = $1 \nAND (\n  status_coleta = 'parcial'\n  OR (status_coleta = 'concluida' AND finished_at > NOW() - INTERVAL '10 minutes')\n)\nORDER BY started_at DESC LIMIT 1",
+        "options": {
+          "queryReplacement": "={{ [ $json.phone ] }}"
+        }
+      },
+      "id": "a38fbae7-6d19-487d-a2b0-fbac0885c85c",
+      "name": "Buscar sessao parcial",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -2560,
+        624
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "t2x4ysbtwUUksaCj",
+          "name": "Supabase HeyMax"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c0000003",
+              "leftValue": "={{ $json.session_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "9b4dc175-c833-4f17-92db-10475cd03d53",
+      "name": "Tem sessao parcial?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2336,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f2000001",
+              "name": "session_id",
+              "value": "={{ $json.session_id }}",
+              "type": "string"
+            },
+            {
+              "id": "f2000002",
+              "name": "from",
+              "value": "={{ $('Normalizar Entrada').item.json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "f2000003",
+              "name": "text",
+              "value": "={{ $('Normalizar Entrada').item.json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "19401c7f-4a9d-4722-bcf2-ba96b9f7111b",
+      "name": "Montar payload SUB",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2112,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://agent.heymax.fit/v1/treno-paulo-afonso/conversation/{{ $json.session_id }}/message",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "session_id",
+              "value": "={{ $json.session_id }}"
+            },
+            {
+              "name": "phone",
+              "value": "={{ $json.from }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1888,
+        624
+      ],
+      "id": "a1767520-6452-4057-a839-420cd2a13d22",
+      "name": "A Ponte"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bd1f466b-0663-4bcd-b03e-bf8fc638cefa",
+              "leftValue": "={{ $('A Ponte').item.json.concluido }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1216,
+        624
+      ],
+      "id": "e600db99-4222-4bdc-ab6a-0c56de695859",
+      "name": "O Tomador de Decisão"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.heymax.fit/message/sendText/trenobell",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "7FE740D978BC-436B-BA12-55589F0A4037"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.numero_comercial }}"
+            },
+            {
+              "name": "text",
+              "value": "=🚨 *Novo Feedback - Aula Experimental* 🚨\n\n👤 *Nome do Lead:* {{ $('Normalizar Entrada').first().json.nome || 'Não informado' }}\n📱 *Telefone:* {{ $('Normalizar Entrada').first().json.phone }}\n⭐ *Nota NPS:* {{ $('A Ponte').first().json.dados_coletados.nps }}/10\n💡 *Sugestão:* {{ $('A Ponte').first().json.dados_coletados.sugestao || 'Nenhuma' }}\n🚧 *Objeções:* {{ $('A Ponte').first().json.dados_coletados.objecoes || 'Nenhuma' }}\n🔥 *Quer se matricular?* {{ $('A Ponte').first().json.dados_coletados.intent_matricula ? 'Sim' : 'Não' }}\n\n_(O Bell já enviou a mensagem de despedida para o cliente)_"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -768,
+        624
+      ],
+      "id": "d2c31861-188d-4d29-a72c-0aeb44854bd9",
+      "name": "Relatório para o Gerente"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.heymax.fit/message/sendText/trenobell",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "7FE740D978BC-436B-BA12-55589F0A4037"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $('Normalizar Entrada').item.json.phone }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('A Ponte').item.json.response || $('A Ponte').item.json.resposta }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1440,
+        624
+      ],
+      "id": "ea528e1e-3f85-45e4-8cfc-197264a9e7c6",
+      "name": "Resposta ao Cliente"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT numero_comercial \nFROM organizations \nWHERE slug = 'treno-paulo-afonso' \nLIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -992,
+        624
+      ],
+      "id": "bdbde9e6-56a9-40c4-b0d7-499647e54822",
+      "name": "Buscar Número",
+      "credentials": {
+        "postgres": {
+          "id": "t2x4ysbtwUUksaCj",
+          "name": "Supabase HeyMax"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f5f07024-e67b-428c-9da9-815294a1cf32",
+              "leftValue": "={{ $json.response || $json.resposta }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1664,
+        624
+      ],
+      "id": "0fa880c1-d848-4a9b-85f7-c82015049cd0",
+      "name": "Tem mensagem?"
+    },
+    {
+      "name": "Debounce Buffer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2000,
+        820
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const staticData = getWorkflowStaticData('global');\nconst DEBOUNCE_MS = 4000;\n\nconst items = $input.all();\nif (items.length === 0) return [];\n\nconst item = items[0].json;\nconst phone = item.from;\nconst text = item.text || '';\n\nif (!phone) {\n  throw new Error('Campo \"from\" (telefone) não encontrado no payload.');\n}\n\n// Inicializar buffer para esse número\nif (!staticData[phone]) {\n  staticData[phone] = {\n    messages: [],\n    lastTimestamp: 0\n  };\n}\n\n// Registrar essa mensagem e marcar o timestamp desta execução\nconst myTimestamp = Date.now();\nstaticData[phone].messages.push(text);\nstaticData[phone].lastTimestamp = myTimestamp;\n\n// Aguardar a janela de debounce (4 segundos)\nawait new Promise(resolve => setTimeout(resolve, DEBOUNCE_MS));\n\n// Verificar se somos a última execução para esse número\nif (!staticData[phone] || staticData[phone].lastTimestamp !== myTimestamp) {\n  // Uma nova mensagem chegou depois — morremos aqui\n  return [];\n}\n\n// Somos os últimos! Concatenar todas as mensagens\nconst fullText = staticData[phone].messages.join('\n');\n\n// Limpar memória para esse número\ndelete staticData[phone];\n\n// Continuar com o texto completo concatenado\nreturn [{\n  json: {\n    ...item,\n    text: fullText\n  }\n}];"
+      },
+      "id": "debounce-buffer-001"
+    },
+    {
+      "name": "IF - Roteador de Tipo",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2896,
+        820
+      ],
+      "id": "if-roteador-tipo-001",
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-audio",
+              "leftValue": "={{ $json.message_type }}",
+              "rightValue": "audioMessage",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "name": "Extrair Áudio Base64",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2672,
+        1020
+      ],
+      "id": "extrair-audio-base64-001",
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const items = $input.all();\nconst item = items[0].json;\n\n// Obtém o base64 do áudio do payload bruto do Webhook\nconst msgData = $('Webhook Prospect').item.json.body?.data?.message;\nconst base64Raw = msgData?.base64 || msgData?.audioMessage?.base64;\n\nif (!base64Raw) {\n  throw new Error('Base64 do áudio não encontrado. Certifique-se de que a opção AUDIO_BASE64 está habilitada na Evolution API.');\n}\n\n// Remove prefixo de data URI se presente (ex: \"data:audio/ogg;base64,\")\nconst cleanBase64 = base64Raw.replace(/^data:[^;]+;base64,/, '');\n\n// Converte base64 para Buffer\nconst buffer = Buffer.from(cleanBase64, 'base64');\n\n// Prepara o dado binário para o n8n\nconst binaryData = await this.helpers.prepareBinaryData(buffer, 'audio.ogg', 'audio/ogg; codecs=opus');\n\nreturn [{\n  json: {\n    ...item\n  },\n  binary: {\n    data: binaryData\n  }\n}];"
+      }
+    },
+    {
+      "name": "Whisper - Transcrever Áudio",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        -2448,
+        1020
+      ],
+      "id": "whisper-transcrever-audio-001",
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "binaryPropertyName": "data",
+        "options": {
+          "language": "pt"
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "rlKGVgBF4WeVR6x8",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "name": "Normalizar Texto do Áudio",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2224,
+        1020
+      ],
+      "id": "normalizar-texto-audio-001",
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "nt-001",
+              "name": "phone",
+              "value": "={{ $('Normalizar Entrada').item.json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "nt-002",
+              "name": "text",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "nt-003",
+              "name": "from_me",
+              "value": "={{ $('Normalizar Entrada').item.json.from_me }}",
+              "type": "boolean"
+            },
+            {
+              "id": "nt-004",
+              "name": "message_type",
+              "value": "={{ $('Normalizar Entrada').item.json.message_type }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Prospect": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Entrada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Entrada": {
+      "main": [
+        [
+          {
+            "node": "IF - Roteador de Tipo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ignorar fromMe ou grupo": {
+      "main": [
+        [
+          {
+            "node": "Buscar sessao parcial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar sessao parcial": {
+      "main": [
+        [
+          {
+            "node": "Tem sessao parcial?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem sessao parcial?": {
+      "main": [
+        [
+          {
+            "node": "Montar payload SUB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar payload SUB": {
+      "main": [
+        [
+          {
+            "node": "Debounce Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A Ponte": {
+      "main": [
+        [
+          {
+            "node": "Tem mensagem?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "O Tomador de Decisão": {
+      "main": [
+        [
+          {
+            "node": "Buscar Número",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Resposta ao Cliente": {
+      "main": [
+        [
+          {
+            "node": "O Tomador de Decisão",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Número": {
+      "main": [
+        [
+          {
+            "node": "Relatório para o Gerente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem mensagem?": {
+      "main": [
+        [
+          {
+            "node": "Resposta ao Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Debounce Buffer": {
+      "main": [
+        [
+          {
+            "node": "A Ponte",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Roteador de Tipo": {
+      "main": [
+        [
+          {
+            "node": "Extrair Áudio Base64",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ignorar fromMe ou grupo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Áudio Base64": {
+      "main": [
+        [
+          {
+            "node": "Whisper - Transcrever Áudio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Whisper - Transcrever Áudio": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Texto do Áudio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Texto do Áudio": {
+      "main": [
+        [
+          {
+            "node": "Ignorar fromMe ou grupo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "aaf7fd2a-ac55-4129-890c-f9ba261dcc39",
+  "activeVersionId": "aaf7fd2a-ac55-4129-890c-f9ba261dcc39",
+  "versionCounter": 183,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-03-20T18:01:22.943Z",
+      "createdAt": "2026-03-20T18:01:22.943Z",
+      "role": "workflow:owner",
+      "workflowId": "C3nqo6eUT8RePxEd",
+      "projectId": "JwjbR4bx5YBkAPVP",
+      "project": {
+        "updatedAt": "2025-04-22T00:05:57.581Z",
+        "createdAt": "2025-04-21T23:56:45.246Z",
+        "id": "JwjbR4bx5YBkAPVP",
+        "name": "Mardo Carneiro <mardodavid@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "51879556-966c-42e5-bead-ed1162a850f8"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-04-01T19:29:27.586Z",
+    "createdAt": "2026-04-01T19:29:27.586Z",
+    "versionId": "aaf7fd2a-ac55-4129-890c-f9ba261dcc39",
+    "workflowId": "C3nqo6eUT8RePxEd",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "trenobell/prospect-response",
+          "options": {}
+        },
+        "id": "2ce4aa72-a6bb-45b8-95e2-34abb66b63fb",
+        "name": "Webhook Prospect",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          -3232,
+          624
+        ],
+        "webhookId": "trenobell-prospect-response"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "f1000001",
+                "name": "phone",
+                "value": "={{ (() => {\n  const raw = $json.body.data.key.remoteJid.replace('@s.whatsapp.net','').replace('@g.us','');\n  const digits = raw.replace(/\\D/g,'');\n  if (digits.length === 12 && digits.startsWith('55')) {\n    const ddd = digits.slice(2,4);\n    const numero = digits.slice(4);\n    return '55' + ddd + '9' + numero;\n  }\n  return digits;\n})() }}",
+                "type": "string"
+              },
+              {
+                "id": "f1000002",
+                "name": "text",
+                "value": "={{ $json.body.data.message?.conversation ?? $json.body.data.message?.extendedTextMessage?.text ?? '' }}",
+                "type": "string"
+              },
+              {
+                "id": "f1000003",
+                "name": "from_me",
+                "value": "={{ $json.body.data.key.fromMe }}",
+                "type": "boolean"
+              },
+              {
+                "id": "f1000004",
+                "name": "message_type",
+                "value": "={{ $json.body.data.messageType }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "be11d56c-0d82-49f6-bf4a-feec22f1e834",
+        "name": "Normalizar Entrada",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          -3008,
+          624
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c0000001",
+                "leftValue": "={{ $json.from_me }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false"
+                }
+              },
+              {
+                "id": "c0000002",
+                "leftValue": "={{ $json.message_type }}",
+                "rightValue": "conversation",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "c66bede1-ffab-4a52-9270-3aafa13fd036",
+        "name": "Ignorar fromMe ou grupo",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -2784,
+          624
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "SELECT session_id, coleta_step FROM trial_feedback \nWHERE phone = $1 \nAND (\n  status_coleta = 'parcial'\n  OR (status_coleta = 'concluida' AND finished_at > NOW() - INTERVAL '10 minutes')\n)\nORDER BY started_at DESC LIMIT 1",
+          "options": {
+            "queryReplacement": "={{ [ $json.phone ] }}"
+          }
+        },
+        "id": "a38fbae7-6d19-487d-a2b0-fbac0885c85c",
+        "name": "Buscar sessao parcial",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.5,
+        "position": [
+          -2560,
+          624
+        ],
+        "alwaysOutputData": true,
+        "credentials": {
+          "postgres": {
+            "id": "t2x4ysbtwUUksaCj",
+            "name": "Supabase HeyMax"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c0000003",
+                "leftValue": "={{ $json.session_id }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "9b4dc175-c833-4f17-92db-10475cd03d53",
+        "name": "Tem sessao parcial?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -2336,
+          624
+        ]
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "f2000001",
+                "name": "session_id",
+                "value": "={{ $json.session_id }}",
+                "type": "string"
+              },
+              {
+                "id": "f2000002",
+                "name": "from",
+                "value": "={{ $('Normalizar Entrada').item.json.phone }}",
+                "type": "string"
+              },
+              {
+                "id": "f2000003",
+                "name": "text",
+                "value": "={{ $('Normalizar Entrada').item.json.text }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "19401c7f-4a9d-4722-bcf2-ba96b9f7111b",
+        "name": "Montar payload SUB",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          -2112,
+          624
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://agent.heymax.fit/v1/treno-paulo-afonso/conversation/{{ $json.session_id }}/message",
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "session_id",
+                "value": "={{ $json.session_id }}"
+              },
+              {
+                "name": "phone",
+                "value": "={{ $json.from }}"
+              },
+              {
+                "name": "message",
+                "value": "={{ $json.text }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          -1888,
+          624
+        ],
+        "id": "a1767520-6452-4057-a839-420cd2a13d22",
+        "name": "A Ponte"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "bd1f466b-0663-4bcd-b03e-bf8fc638cefa",
+                "leftValue": "={{ $('A Ponte').item.json.concluido }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -1216,
+          624
+        ],
+        "id": "e600db99-4222-4bdc-ab6a-0c56de695859",
+        "name": "O Tomador de Decisão"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://evo.heymax.fit/message/sendText/trenobell",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "7FE740D978BC-436B-BA12-55589F0A4037"
+              }
+            ]
+          },
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "number",
+                "value": "={{ $json.numero_comercial }}"
+              },
+              {
+                "name": "text",
+                "value": "=🚨 *Novo Feedback - Aula Experimental* 🚨\n\n👤 *Nome do Lead:* {{ $('Normalizar Entrada').first().json.nome || 'Não informado' }}\n📱 *Telefone:* {{ $('Normalizar Entrada').first().json.phone }}\n⭐ *Nota NPS:* {{ $('A Ponte').first().json.dados_coletados.nps }}/10\n💡 *Sugestão:* {{ $('A Ponte').first().json.dados_coletados.sugestao || 'Nenhuma' }}\n🚧 *Objeções:* {{ $('A Ponte').first().json.dados_coletados.objecoes || 'Nenhuma' }}\n🔥 *Quer se matricular?* {{ $('A Ponte').first().json.dados_coletados.intent_matricula ? 'Sim' : 'Não' }}\n\n_(O Bell já enviou a mensagem de despedida para o cliente)_"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          -768,
+          624
+        ],
+        "id": "d2c31861-188d-4d29-a72c-0aeb44854bd9",
+        "name": "Relatório para o Gerente"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://evo.heymax.fit/message/sendText/trenobell",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "7FE740D978BC-436B-BA12-55589F0A4037"
+              }
+            ]
+          },
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "number",
+                "value": "={{ $('Normalizar Entrada').item.json.phone }}"
+              },
+              {
+                "name": "text",
+                "value": "={{ $('A Ponte').item.json.response || $('A Ponte').item.json.resposta }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          -1440,
+          624
+        ],
+        "id": "ea528e1e-3f85-45e4-8cfc-197264a9e7c6",
+        "name": "Resposta ao Cliente"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "SELECT numero_comercial \nFROM organizations \nWHERE slug = 'treno-paulo-afonso' \nLIMIT 1;",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          -992,
+          624
+        ],
+        "id": "bdbde9e6-56a9-40c4-b0d7-499647e54822",
+        "name": "Buscar Número",
+        "credentials": {
+          "postgres": {
+            "id": "t2x4ysbtwUUksaCj",
+            "name": "Supabase HeyMax"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "f5f07024-e67b-428c-9da9-815294a1cf32",
+                "leftValue": "={{ $json.response || $json.resposta }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -1664,
+          624
+        ],
+        "id": "0fa880c1-d848-4a9b-85f7-c82015049cd0",
+        "name": "Tem mensagem?"
+      },
+      {
+        "name": "Debounce Buffer",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -2000,
+          820
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const staticData = getWorkflowStaticData('global');\nconst DEBOUNCE_MS = 4000;\n\nconst items = $input.all();\nif (items.length === 0) return [];\n\nconst item = items[0].json;\nconst phone = item.from;\nconst text = item.text || '';\n\nif (!phone) {\n  throw new Error('Campo \"from\" (telefone) não encontrado no payload.');\n}\n\n// Inicializar buffer para esse número\nif (!staticData[phone]) {\n  staticData[phone] = {\n    messages: [],\n    lastTimestamp: 0\n  };\n}\n\n// Registrar essa mensagem e marcar o timestamp desta execução\nconst myTimestamp = Date.now();\nstaticData[phone].messages.push(text);\nstaticData[phone].lastTimestamp = myTimestamp;\n\n// Aguardar a janela de debounce (4 segundos)\nawait new Promise(resolve => setTimeout(resolve, DEBOUNCE_MS));\n\n// Verificar se somos a última execução para esse número\nif (!staticData[phone] || staticData[phone].lastTimestamp !== myTimestamp) {\n  // Uma nova mensagem chegou depois — morremos aqui\n  return [];\n}\n\n// Somos os últimos! Concatenar todas as mensagens\nconst fullText = staticData[phone].messages.join('\n');\n\n// Limpar memória para esse número\ndelete staticData[phone];\n\n// Continuar com o texto completo concatenado\nreturn [{\n  json: {\n    ...item,\n    text: fullText\n  }\n}];"
+        },
+        "id": "debounce-buffer-001"
+      }
+    ],
+    "connections": {
+      "Webhook Prospect": {
+        "main": [
+          [
+            {
+              "node": "Normalizar Entrada",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Normalizar Entrada": {
+        "main": [
+          [
+            {
+              "node": "Ignorar fromMe ou grupo",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Ignorar fromMe ou grupo": {
+        "main": [
+          [
+            {
+              "node": "Buscar sessao parcial",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Buscar sessao parcial": {
+        "main": [
+          [
+            {
+              "node": "Tem sessao parcial?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Tem sessao parcial?": {
+        "main": [
+          [
+            {
+              "node": "Montar payload SUB",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Montar payload SUB": {
+        "main": [
+          [
+            {
+              "node": "Debounce Buffer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "A Ponte": {
+        "main": [
+          [
+            {
+              "node": "Tem mensagem?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "O Tomador de Decisão": {
+        "main": [
+          [
+            {
+              "node": "Buscar Número",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          []
+        ]
+      },
+      "Resposta ao Cliente": {
+        "main": [
+          [
+            {
+              "node": "O Tomador de Decisão",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Buscar Número": {
+        "main": [
+          [
+            {
+              "node": "Relatório para o Gerente",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Tem mensagem?": {
+        "main": [
+          [
+            {
+              "node": "Resposta ao Cliente",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Debounce Buffer": {
+        "main": [
+          [
+            {
+              "node": "A Ponte",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Mardo Carneiro",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-04-01T19:29:27.635Z",
+        "id": 642,
+        "workflowId": "C3nqo6eUT8RePxEd",
+        "versionId": "aaf7fd2a-ac55-4129-890c-f9ba261dcc39",
+        "event": "deactivated",
+        "userId": "51879556-966c-42e5-bead-ed1162a850f8"
+      },
+      {
+        "createdAt": "2026-04-01T19:29:27.656Z",
+        "id": 643,
+        "workflowId": "C3nqo6eUT8RePxEd",
+        "versionId": "aaf7fd2a-ac55-4129-890c-f9ba261dcc39",
+        "event": "activated",
+        "userId": "51879556-966c-42e5-bead-ed1162a850f8"
+      }
+    ]
+  }
+}

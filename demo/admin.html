@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeyMax — Admin Demo</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0e0e0c;
+            --surface: #161614;
+            --border: rgba(255, 255, 255, 0.08);
+            --green: #9EFF57;
+            --green-dim: rgba(158, 255, 87, 0.12);
+            --text: #e8e6df;
+            --muted: #6b6960;
+            --danger: #ff5757;
+            --danger-dim: rgba(255, 87, 87, 0.12);
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .wrap {
+            max-width: 560px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-family: 'DM Mono', monospace;
+            font-size: 13px;
+            color: var(--green);
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            margin-bottom: 2.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+        }
+
+        h1 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: .5rem;
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 0.5px solid var(--border);
+            border-radius: 16px;
+            padding: 1.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            margin-bottom: 1.25rem;
+        }
+
+        .field {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            background: var(--bg);
+            border: 0.5px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            outline: none;
+            transition: border-color .2s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--green);
+        }
+
+        input::placeholder {
+            color: var(--muted);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        select option {
+            background: #1a1a18;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s;
+            margin-bottom: .75rem;
+        }
+
+        .btn-primary {
+            background: var(--green);
+            color: #0e0e0c;
+        }
+
+        .btn-primary:hover {
+            opacity: .88;
+        }
+
+        .btn-primary:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
+
+        .btn-danger {
+            background: var(--danger-dim);
+            color: var(--danger);
+            border: 0.5px solid rgba(255, 87, 87, 0.2);
+        }
+
+        .btn-danger:hover {
+            background: rgba(255, 87, 87, 0.2);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: var(--surface);
+            border: 0.5px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 20px;
+            font-size: 13px;
+            transition: transform .3s ease;
+            z-index: 999;
+            white-space: nowrap;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.success {
+            border-color: rgba(158, 255, 87, 0.3);
+            color: var(--green);
+        }
+
+        .toast.error {
+            border-color: rgba(255, 87, 87, 0.3);
+            color: var(--danger);
+        }
+
+        .demos-list {
+            margin-top: 1.5rem;
+        }
+
+        .demo-item {
+            background: var(--surface);
+            border: 0.5px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-bottom: .75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .demo-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .demo-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .demo-meta {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .demo-ttl {
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            color: var(--green);
+            background: var(--green-dim);
+            padding: 3px 8px;
+            border-radius: 6px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .empty {
+            text-align: center;
+            color: var(--muted);
+            font-size: 13px;
+            padding: 2rem 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+
+        <div class="logo">HeyMax · Admin Demo</div>
+
+        <h1>Nova demonstração</h1>
+        <p class="subtitle">Preencha os dados do prospect antes da reunião.</p>
+
+        <div class="card">
+            <div class="card-title">Dados do prospect</div>
+
+            <div class="field">
+                <label>Slug da demo (sem espaços)</label>
+                <input id="demo_id" type="text" placeholder="ex: academia-force-sp">
+            </div>
+            <div class="field">
+                <label>Nome da academia</label>
+                <input id="academy_name" type="text" placeholder="ex: Academia Force">
+            </div>
+            <div class="field">
+                <label>Nome do contato</label>
+                <input id="contact_name" type="text" placeholder="ex: Ricardo">
+            </div>
+            <div class="field">
+                <label>WhatsApp (com DDI)</label>
+                <input id="contact_phone" type="text" placeholder="ex: 5581999999999">
+            </div>
+            <div class="field">
+                <label>Objetivo principal</label>
+                <select id="contact_goal">
+                    <option value="aumentar retenção de alunos">Aumentar retenção</option>
+                    <option value="converter mais aulas experimentais">Converter mais experimentais</option>
+                    <option value="reduzir trabalho manual da recepção">Reduzir trabalho manual</option>
+                    <option value="engajar alunos inativos">Reativar alunos inativos</option>
+                    <option value="melhorar comunicação com alunos">Melhorar comunicação</option>
+                </select>
+            </div>
+
+            <button class="btn btn-primary" id="btn-criar" onclick="criarDemo()">
+                Cadastrar e enviar boas-vindas
+            </button>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Reset de sessão</div>
+            <div class="field">
+                <label>WhatsApp do prospect (com DDI)</label>
+                <input id="reset_phone" type="text" placeholder="ex: 5581999999999">
+            </div>
+            <button class="btn btn-danger" onclick="resetDemo()">
+                Apagar sessão e histórico
+            </button>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Demos ativas</div>
+            <div id="demos-list">
+                <div class="empty">Carregando...</div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        function showToast(msg, type = 'success') {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = `toast ${type} show`;
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        function ttlLabel(expiresAt) {
+            const diff = new Date(expiresAt) - new Date();
+            if (diff <= 0) return 'expirada';
+            const h = Math.floor(diff / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            return h > 0 ? `${h}h ${m}m` : `${m}min`;
+        }
+
+        async function carregarDemos() {
+            try {
+                const res = await fetch('/demo/admin/list');
+                const demos = await res.json();
+                const el = document.getElementById('demos-list');
+                if (!demos.length) {
+                    el.innerHTML = '<div class="empty">Nenhuma demo ativa</div>';
+                    return;
+                }
+                el.innerHTML = demos.map(d => `
+        <div class="demo-item">
+          <div class="demo-info">
+            <div class="demo-name">${d.contact_name} · ${d.academy_name}</div>
+            <div class="demo-meta">${d.contact_phone} · ${d.contact_goal}</div>
+          </div>
+          <div class="demo-ttl">${ttlLabel(d.expires_at)}</div>
+        </div>
+      `).join('');
+            } catch (e) {
+                document.getElementById('demos-list').innerHTML = '<div class="empty">Erro ao carregar</div>';
+            }
+        }
+
+        async function criarDemo() {
+            const btn = document.getElementById('btn-criar');
+            const body = {
+                demo_id: document.getElementById('demo_id').value.trim(),
+                academy_name: document.getElementById('academy_name').value.trim(),
+                contact_name: document.getElementById('contact_name').value.trim(),
+                contact_phone: document.getElementById('contact_phone').value.trim(),
+                contact_goal: document.getElementById('contact_goal').value,
+            };
+
+            if (!body.demo_id || !body.academy_name || !body.contact_name || !body.contact_phone) {
+                showToast('Preencha todos os campos', 'error'); return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Enviando...';
+
+            try {
+                const res = await fetch('/demo/admin/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Erro');
+                showToast('✓ Demo criada — boas-vindas enviadas!');
+                ['demo_id', 'academy_name', 'contact_name', 'contact_phone'].forEach(id => document.getElementById(id).value = '');
+                carregarDemos();
+            } catch (e) {
+                showToast(e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Cadastrar e enviar boas-vindas';
+            }
+        }
+
+        async function resetDemo() {
+            const phone = document.getElementById('reset_phone').value.trim();
+            if (!phone) { showToast('Informe o telefone', 'error'); return; }
+            if (!confirm(`Apagar toda a sessão de ${phone}?`)) return;
+
+            try {
+                const res = await fetch('/demo/admin/reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contact_phone: phone }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Erro');
+                showToast('✓ Sessão apagada');
+                document.getElementById('reset_phone').value = '';
+                carregarDemos();
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        carregarDemos();
+        setInterval(carregarDemos, 30000);
+    </script>
+</body>
+
+</html>

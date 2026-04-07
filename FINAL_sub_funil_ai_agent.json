@@ -1,0 +1,1265 @@
+{
+  "updatedAt": "2026-03-24T20:37:52.183Z",
+  "createdAt": "2026-03-21T22:45:00.975Z",
+  "id": "PxhQLYCW7R2BdwRf",
+  "name": "[SUB] Funil Experimental - AI Agent",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "from"
+            },
+            {
+              "name": "text"
+            },
+            {
+              "name": "session_id"
+            },
+            {
+              "name": "professor"
+            },
+            {
+              "name": "coleta_step"
+            },
+            {
+              "name": "participant_type"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        1264,
+        800
+      ],
+      "id": "fbca2e72-cd89-4ef9-83bb-b76ef93dde7a",
+      "name": "Execute Workflow Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1",
+              "name": "phone",
+              "value": "={{ $json.from }}",
+              "type": "string"
+            },
+            {
+              "id": "e2",
+              "name": "session_id",
+              "value": "={{ $json.session_id }}",
+              "type": "string"
+            },
+            {
+              "id": "e3",
+              "name": "user_message",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "e4",
+              "name": "professor",
+              "value": "={{ $json.professor }}",
+              "type": "string"
+            },
+            {
+              "id": "e5",
+              "name": "coleta_step",
+              "value": "={{ $json.coleta_step }}",
+              "type": "string"
+            },
+            {
+              "id": "e6",
+              "name": "participant_type",
+              "value": "={{ $json.participant_type }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1488,
+        800
+      ],
+      "id": "c0dc4a4d-1d41-40a3-825b-7161a30d0169",
+      "name": "Entrada"
+    },
+    {
+      "parameters": {
+        "jsCode": "const msg = ($input.first().json.user_message || '').toLowerCase().trim();\n\n// Sinais inequivocos de despedida — sempre encerram\nconst sinais_inequivocos = ['tchau','xau','flw','ate mais','adeus','👋','bye'];\n// Sinais ambiguos — so encerram se todos os 4 dados ja foram coletados\nconst sinais_ambiguos = ['valeu','obrigado','👍','ok','oks','tudo bem','tmj','certo','entendi'];\n\nconst encerrando_inequivoco = sinais_inequivocos.some(s => msg.includes(s));\nconst encerrando_ambiguo    = !encerrando_inequivoco && sinais_ambiguos.some(\n  s => msg === s || msg.startsWith(s + ' ') || msg.endsWith(' ' + s) || msg.includes(' ' + s + ' ')\n);\n\nreturn [{\n  json: {\n    ...$input.first().json,\n    encerrando_inequivoco,\n    encerrando_ambiguo\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        800
+      ],
+      "id": "03daa888-c637-480b-8533-71ed1f7b2337",
+      "name": "Detecta Encerramento"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT nps, sugestao, objecoes, intent_matricula, nome, last_bot_message_at\nFROM trial_feedback\nWHERE session_id = $1\nLIMIT 1",
+        "options": {
+          "queryReplacement": "={{ [ $('Entrada').item.json.session_id ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1936,
+        800
+      ],
+      "id": "2b5ebe74-5de0-4560-8c08-81cd03d0c373",
+      "name": "Busca Estado",
+      "credentials": {
+        "postgres": {
+          "id": "Qu3wWADR0qH8hskO",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const entrada = $('Detecta Encerramento').first().json;\nconst estado  = $('Busca Estado').first().json;\n\nconst phone            = entrada.phone || '';\nconst session_id       = entrada.session_id || '';\nconst user_message     = entrada.user_message || '';\nconst professor        = entrada.professor || '';\nconst coleta_step      = entrada.coleta_step || 'q1';\nconst participant_type = entrada.participant_type || 'prospect';\n\nif (!phone || !session_id) {\n  return [{ json: { error: 'phone e session_id sao obrigatorios' } }];\n}\n\nconst nps              = estado.nps !== undefined && estado.nps !== null ? estado.nps : null;\nconst sugestao         = estado.sugestao && estado.sugestao.trim() !== '' ? estado.sugestao.trim() : null;\nconst objecoes         = estado.objecoes && estado.objecoes.trim() !== '' ? estado.objecoes.trim() : null;\nconst intent_matricula = estado.intent_matricula !== undefined && estado.intent_matricula !== null ? estado.intent_matricula : null;\nconst nome             = estado.nome && estado.nome.trim() !== '' ? estado.nome.trim() : null;\n\n// ── DECISAO DE ENCERRAMENTO ─────────────────────────────────────────────────\n// inequivoco (tchau, flw, 👋) => encerra sempre\n// ambiguo (ok, 👍, valeu)     => so encerra se todos os 4 campos ja estao no banco\nconst encerrando_inequivoco = entrada.encerrando_inequivoco || false;\nconst encerrando_ambiguo    = entrada.encerrando_ambiguo    || false;\nconst todos_ja_no_banco     = nps !== null && sugestao !== null && objecoes !== null && intent_matricula !== null;\nconst encerrando            = encerrando_inequivoco || (encerrando_ambiguo && todos_ja_no_banco);\n// ────────────────────────────────────────────────────────────────────────────\n\nconst linha_nps  = nps !== null              ? 'NPS: ' + nps + '/10 - ENCERRADO'                                  : 'NPS: nao coletado';\nconst linha_sug  = sugestao                  ? 'Sugestao: \"' + sugestao + '\" - ENCERRADO'                         : 'Sugestao: nao coletada';\nconst linha_obj  = objecoes                  ? 'Objecao: \"' + objecoes + '\" - ENCERRADO'                          : 'Objecao: nao coletada';\nconst linha_int  = intent_matricula !== null ? 'Intencao: ' + (intent_matricula ? 'sim' : 'nao') + ' - ENCERRADO' : 'Intencao: nao coletada';\n\nconst faltando = [\n  nps === null             ? 'NPS (como avaliaria a experiencia de 0 a 10)' : null,\n  !sugestao                ? 'Sugestao (o que gostou ou mudaria)'           : null,\n  !objecoes                ? 'Objecao (alguma hesitacao sobre se matricular)' : null,\n  intent_matricula === null ? 'Intencao (pensa em se matricular?)'           : null\n].filter(Boolean);\n\nconst e_primeira_mensagem = !estado.last_bot_message_at; // true somente se bot nunca respondeu nessa sessao\n\nconst primeira_mensagem_fixa = nome\n  ? 'Oi, ' + nome + '! Sou o Bell, assistente da Academia Treno. Estou entrando em contato pra saber como foi sua aula experimental hoje. O que voce achou da experiencia?'\n  : 'Oi! Sou o Bell, assistente da Academia Treno. Estou entrando em contato pra saber como foi sua aula experimental hoje. O que voce achou da experiencia?';\n\nlet prompt_communicator = '';\n\nif (encerrando) {\n  prompt_communicator = 'Voce e o Bell, assistente da Academia Treno.\\n'\n    + 'O usuario sinalizou que quer encerrar a conversa.\\n'\n    + 'Encerre de forma calorosa e curta, desejando boa sorte nos treinos.\\n'\n    + 'Nao faca nenhuma pergunta.';\n} else {\n  const bloco_apresentacao = e_primeira_mensagem\n    ? 'PRIMEIRA MENSAGEM — APRESENTACAO OBRIGATORIA:\\n'\n      + 'Voce ainda nao se apresentou. A pessoa nao sabe quem e voce.\\n'\n      + 'Estrutura obrigatoria (2-3 frases curtas):\\n'\n      + '  1. Cumprimento caloroso usando o nome da pessoa\\n'\n      + '  2. Apresente-se: diga que e o Bell, assistente da Academia Treno\\n'\n      + '  3. Diga que viu que ela fez uma aula experimental hoje e que quer saber como foi\\n'\n      + 'Depois, na mesma mensagem, faca a pergunta de NPS de forma leve e humana.\\n'\n      + 'Exemplo de tom (nao copie): Oi [nome]! Sou o Bell da Academia Treno 😊 Vi que vc experimentou uma aula hoje — de 0 a 10, como foi?\\n'\n    : '';\n\n  const proximo_objetivo = faltando.length > 0\n    ? 'OBJETIVO DESTA MENSAGEM: Colete -- ' + faltando[0] + '.'\n    : 'OBJETIVO DESTA MENSAGEM: Todos os dados foram coletados. Encerre com mensagem calorosa e curta. Nao faca mais perguntas.';\n\n  prompt_communicator = 'Voce e o Bell, assistente da Academia Treno.\\n'\n    + (nome ? 'Voce esta conversando com ' + nome + '. Use o nome dele naturalmente uma vez no inicio, depois so se couber.\\n' : 'Voce esta conversando com alguem que fez uma aula experimental hoje.\\n')\n    + 'Seu papel e ter uma conversa genuina e humana, nao um formulario.\\n'\n    + '\\n'\n    + 'ESTADO CONFIRMADO DA CONVERSA:\\n'\n    + linha_nps + '\\n'\n    + linha_sug + '\\n'\n    + linha_obj + '\\n'\n    + linha_int + '\\n'\n    + '\\n'\n    + 'DADOS QUE AINDA FALTAM:\\n'\n    + (faltando.length > 0 ? faltando.join('\\n') : 'Nenhum - todos coletados') + '\\n'\n    + '\\n'\n    + 'REGRA ABSOLUTA: Nunca faca perguntas sobre eixos marcados como ENCERRADO.\\n'\n    + '\\n'\n   + bloco_apresentacao + proximo_objetivo + '\\n'\n    + '\\n'\n    + 'REGRA CRITICA:\\n'\n    + '- Cada mensagem deve conter APENAS UMA pergunta.\\n'\n    + '- Essa pergunta deve mapear para UM UNICO campo: NPS ou Sugestao ou Objecao ou Intencao.\\n'\n    + '- Nunca misture contexto anterior com a pergunta atual.\\n'\n    + '- Nunca faca perguntas compostas.\\n'\n    + '\\n'\n    + 'FORMATO OBRIGATORIO:\\n'\n    + '- 1 frase curta de contexto\\n'\n    + '- 1 pergunta direta\\n'\n    + '- Nada mais\\n'\n    + '- Se o objetivo for coletar Intencao, pergunte diretamente: voce pensa em se matricular?\\n'\n    + '- Se o objetivo for coletar Objecao, pergunte: tem algo que te impediria de se matricular?\\n'\n    + '\\n'\n    + 'TOM:\\n'\n    + '- Mensagens curtas. WhatsApp nao e e-mail.\\n'\n    + '- Caloroso, direto, humano.\\n'\n    + '- Maximo 1 emoji por mensagem.\\n'\n    + '- Nunca use: feedback, avaliacao, formulario, pesquisa, nota, pontuacao.\\n'\n    + '- Nunca pressione para matricula.\\n'\n    + '- Se o usuario mencionar preco ou planos, diga que a equipe da Treno vai entrar em contato. Nao ofereca valores.\\n';\n}\n\nconst prompt_extractor = 'Voce e um extrator de dados estruturados.\\n'\n  + '\\n'\n  + 'Analise a MENSAGEM DO USUARIO considerando o CONTEXTO da pergunta que o assistente acabou de fazer.\\n'\n  + 'Retorne APENAS um objeto JSON valido, sem texto antes ou depois, sem markdown.\\n'\n  + '\\n'\n  + 'ESTADO ATUAL DA COLETA:\\n'\n  + linha_nps + '\\n'\n  + linha_sug + '\\n'\n  + linha_obj + '\\n'\n  + linha_int + '\\n'\n  + '\\n'\n  + 'ULTIMA MENSAGEM DO ASSISTENTE:\\n'\n  + '__COMMUNICATOR_OUTPUT__\\n'\n  + '\\n'\n  + 'MENSAGEM DO USUARIO:\\n'\n  + '\"' + user_message + '\"\\n'\n  + '\\n'\n  + 'REGRAS DE EXTRACAO:\\n'\n  + '\\n'\n  + 'NPS — extrair quando o assistente perguntou sobre avaliacao ou experiencia:\\n'\n  + '  * Numero direto de 0-10 (ex: \"9\", \"10\") → nps = esse numero\\n'\n  + '  * Frases como \"nota X\", \"seria X\", \"daria X\", \"dou X\", \"X/10\" → nps = X\\n'\n  + '  * Numero por extenso: zero=0, um=1, dois=2, tres=3, quatro=4, cinco=5, seis=6, sete=7, oito=8, nove=9, dez=10 → nps = esse numero\\n'\n  + '  * Se nenhum numero identificavel na resposta → nps = null\\n'\n  + '\\n'\n  + 'intent_matricula — extrair quando o assistente perguntou sobre matricula ou intencao de continuar:\\n'\n  + '  * \"sim\", \"quero\", \"vou\", \"pretendo\", \"pensando nisso\", \"ok\", \"claro\", \"👍\", \"com certeza\", \"vai sim\", \"tenho interesse\" → intent_matricula: true\\n'\n  + '  * \"nao\", \"nao vou\", \"nao tenho interesse\", \"talvez\", \"nao sei\", \"ainda nao decidi\" → intent_matricula: false\\n'\n  + '  * Se a pergunta do assistente foi sobre receio ou hesitacao (nao sobre intencao direta) → nao extraia intent_matricula\\n'\n  + '\\n'\n  + 'sugestao:\\n'\n  + '  * Extrair quando o assistente perguntou o que o usuario gostou ou mudaria\\n'\n  + '  * Resposta positiva vaga (\"foi legal\", \"gostei\", \"tudo bem\") → sugestao: \"gostou da experiencia\"\\n'\n  + '  * Se o usuario detalhou algo → sugestao: texto descritivo\\n'\n  + '\\n'\n  + 'objecoes:\\n'\n  + '  * Extrair quando o assistente perguntou sobre hesitacoes ou barreiras\\n'\n  + '  * \"nao\", \"nenhuma\", \"nao tenho\", \"nada\" em resposta a pergunta de barreira → objecoes: \"nenhuma\"\\n'\n  + '  * Se descreveu barreira concreta → objecoes: texto descritivo\\n'\n  + '\\n'\n  + 'REGRAS GERAIS:\\n'\n  + '  * Se um campo ja esta ENCERRADO no estado atual, retorne null para ele\\n'\n  + '  * Se um campo nao foi respondido nesta mensagem, retorne null\\n'\n  + '  * NPS deve ser numero inteiro de 0 a 10, ou null\\n'\n  + '  * intent_matricula deve ser true, false ou null\\n'\n  + '  * sugestao e objecoes devem ser strings descritivas ou null\\n'\n  + '\\n'\n  + 'Retorne exatamente neste formato:\\n'\n  + '{\"nps\": <number|null>, \"sugestao\": <string|null>, \"objecoes\": <string|null>, \"intent_matricula\": <boolean|null>}';\n\nreturn [{\n  json: {\n    phone,\n    session_id,\n    user_message,\n    professor,\n    coleta_step,\n    participant_type,\n    encerrando,\n    prompt_communicator,\n    prompt_extractor,\n    estado_atual: { nps, sugestao, objecoes, intent_matricula },\n    faltando,\n    e_primeira_mensagem,\n    primeira_mensagem_fixa\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        800
+      ],
+      "id": "5ef2e9bd-6f17-4d0e-9588-e6cf38e09fe7",
+      "name": "Monta Prompts"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "if-primeira-001",
+              "leftValue": "={{ $json.e_primeira_mensagem }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2384,
+        800
+      ],
+      "id": "5439eecb-dd6d-416b-a45e-dc7a3bd9fdda",
+      "name": "E primeira mensagem?"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ $('Monta Prompts').item.json.phone }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2608,
+        720
+      ],
+      "id": "8b800996-2e33-4ee0-b95f-7a98707eff9f",
+      "name": "Limpa Redis",
+      "credentials": {
+        "redis": {
+          "id": "giRY6SDtOMsz4RYj",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Monta Prompts').item.json.e_primeira_mensagem ? $('Monta Prompts').item.json.primeira_mensagem_fixa : $('Monta Prompts').item.json.user_message }}",
+        "options": {
+          "systemMessage": "={{ $('Monta Prompts').item.json.prompt_communicator }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2832,
+        800
+      ],
+      "id": "11890f1f-9427-474c-8c32-5596e2dd89eb",
+      "name": "Communicator"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2848,
+        1024
+      ],
+      "id": "59e13fbc-9d6e-4f3c-95d1-5d20fef33f26",
+      "name": "OpenAI Communicator",
+      "credentials": {
+        "openAiApi": {
+          "id": "rlKGVgBF4WeVR6x8",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Monta Prompts').item.json.phone }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.5,
+      "position": [
+        2976,
+        1024
+      ],
+      "id": "ac4ebe09-2d36-4c00-bc81-1e468106ff3c",
+      "name": "Redis Chat Memory",
+      "credentials": {
+        "redis": {
+          "id": "giRY6SDtOMsz4RYj",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "set-extractor-001",
+              "name": "prompt_extractor_final",
+              "value": "={{ $('Monta Prompts').item.json.prompt_extractor.replace('__COMMUNICATOR_OUTPUT__', $('Communicator').item.json.output) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3184,
+        800
+      ],
+      "id": "23557645-bdc7-4f3d-96b6-d96d63136d06",
+      "name": "Monta Prompt Extractor"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt_extractor_final }}",
+        "messages": {
+          "messageValues": [
+            {
+              "type": "HumanMessagePromptTemplate",
+              "message": "={{ $json.prompt_extractor_final }}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        3408,
+        800
+      ],
+      "id": "fc1789ba-6f23-4dc4-856b-a4db20249ea2",
+      "name": "Extractor"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3488,
+        1024
+      ],
+      "id": "188e1a99-8a07-494e-b367-26356f227af1",
+      "name": "OpenAI Extractor",
+      "credentials": {
+        "openAiApi": {
+          "id": "rlKGVgBF4WeVR6x8",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const estadoAtual = $('Monta Prompts').first().json.estado_atual;\nconst rawOutput   = $('Extractor').first().json.text || '';\n\nlet extraido = {};\ntry {\n  const clean = rawOutput.replace(/```json|```/g, '').trim();\n  extraido = JSON.parse(clean);\n} catch(e) {\n  extraido = {};\n}\n\nconst nps = (extraido.nps !== null && extraido.nps !== undefined)\n  ? extraido.nps\n  : estadoAtual.nps;\n\nconst sugestao = (extraido.sugestao !== null && extraido.sugestao !== undefined && extraido.sugestao !== '')\n  ? extraido.sugestao\n  : estadoAtual.sugestao;\n\nconst objecoes = (extraido.objecoes !== null && extraido.objecoes !== undefined && extraido.objecoes !== '')\n  ? extraido.objecoes\n  : estadoAtual.objecoes;\n\nconst intent_matricula = (extraido.intent_matricula !== null && extraido.intent_matricula !== undefined)\n  ? extraido.intent_matricula\n  : estadoAtual.intent_matricula;\n\nconst encerrando    = $('Monta Prompts').first().json.encerrando || false;\nconst faltando      = $('Monta Prompts').first().json.faltando || [];\nconst todos_coletados = encerrando || (\n  nps !== null &&\n  sugestao !== null &&\n  objecoes !== null &&\n  intent_matricula !== null\n);\n\nconst session_id = $('Monta Prompts').first().json.session_id;\n\nreturn [{\n  json: {\n    session_id,\n    nps,\n    sugestao,\n    objecoes,\n    intent_matricula,\n    todos_coletados\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3760,
+        800
+      ],
+      "id": "76b22065-f9e1-4724-99e3-6e8dcc02a8d9",
+      "name": "Merge Estado"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE trial_feedback SET nps = $1, sugestao = $2, objecoes = $3, intent_matricula = $4, status_coleta = CASE WHEN $5 THEN 'concluida' ELSE 'parcial' END, finished_at = CASE WHEN $5 THEN NOW() ELSE NULL END, last_user_message = $6, last_user_message_at = NOW() WHERE session_id = $7",
+        "options": {
+          "queryReplacement": "={{ [ $json.nps, $json.sugestao, $json.objecoes, $json.intent_matricula, $json.todos_coletados, $('Monta Prompts').item.json.user_message, $json.session_id ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3984,
+        800
+      ],
+      "id": "0c711336-aee6-421d-9d9e-05f4211c01e8",
+      "name": "Atualiza Estado",
+      "credentials": {
+        "postgres": {
+          "id": "Qu3wWADR0qH8hskO",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.heymax.fit/message/sendText/trenobell",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "7FE740D978BC-436B-BA12-55589F0A4037"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $('Monta Prompts').item.json.phone }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('Communicator').item.json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4208,
+        800
+      ],
+      "id": "1566403b-5e0a-443d-abf9-509b94db6b3f",
+      "name": "Envia WhatsApp"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE trial_feedback SET last_bot_message_at = NOW() WHERE session_id = $1",
+        "options": {
+          "queryReplacement": "={{ [ $('Monta Prompts').item.json.session_id ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4432,
+        800
+      ],
+      "id": "9c725fde-449b-4cdf-adde-1525f3894b08",
+      "name": "Atualiza Timestamps",
+      "credentials": {
+        "postgres": {
+          "id": "Qu3wWADR0qH8hskO",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Entrada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Detecta Encerramento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detecta Encerramento": {
+      "main": [
+        [
+          {
+            "node": "Busca Estado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Estado": {
+      "main": [
+        [
+          {
+            "node": "Monta Prompts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monta Prompts": {
+      "main": [
+        [
+          {
+            "node": "E primeira mensagem?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "E primeira mensagem?": {
+      "main": [
+        [
+          {
+            "node": "Limpa Redis",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Communicator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpa Redis": {
+      "main": [
+        [
+          {
+            "node": "Communicator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Communicator": {
+      "main": [
+        [
+          {
+            "node": "Monta Prompt Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monta Prompt Extractor": {
+      "main": [
+        [
+          {
+            "node": "Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extractor": {
+      "main": [
+        [
+          {
+            "node": "Merge Estado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Estado": {
+      "main": [
+        [
+          {
+            "node": "Atualiza Estado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualiza Estado": {
+      "main": [
+        [
+          {
+            "node": "Envia WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envia WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Atualiza Timestamps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Communicator": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Communicator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Communicator",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Extractor": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "0cd68ed8-95f4-4086-9650-2af434411052",
+  "activeVersionId": "0cd68ed8-95f4-4086-9650-2af434411052",
+  "versionCounter": 157,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-03-21T22:45:00.975Z",
+      "createdAt": "2026-03-21T22:45:00.975Z",
+      "role": "workflow:owner",
+      "workflowId": "PxhQLYCW7R2BdwRf",
+      "projectId": "JwjbR4bx5YBkAPVP",
+      "project": {
+        "updatedAt": "2025-04-22T00:05:57.581Z",
+        "createdAt": "2025-04-21T23:56:45.246Z",
+        "id": "JwjbR4bx5YBkAPVP",
+        "name": "Mardo Carneiro <mardodavid@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "51879556-966c-42e5-bead-ed1162a850f8"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-03-24T20:38:25.264Z",
+    "createdAt": "2026-03-24T20:37:52.184Z",
+    "versionId": "0cd68ed8-95f4-4086-9650-2af434411052",
+    "workflowId": "PxhQLYCW7R2BdwRf",
+    "nodes": [
+      {
+        "parameters": {
+          "workflowInputs": {
+            "values": [
+              {
+                "name": "from"
+              },
+              {
+                "name": "text"
+              },
+              {
+                "name": "session_id"
+              },
+              {
+                "name": "professor"
+              },
+              {
+                "name": "coleta_step"
+              },
+              {
+                "name": "participant_type"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          1264,
+          800
+        ],
+        "id": "fbca2e72-cd89-4ef9-83bb-b76ef93dde7a",
+        "name": "Execute Workflow Trigger"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "e1",
+                "name": "phone",
+                "value": "={{ $json.from }}",
+                "type": "string"
+              },
+              {
+                "id": "e2",
+                "name": "session_id",
+                "value": "={{ $json.session_id }}",
+                "type": "string"
+              },
+              {
+                "id": "e3",
+                "name": "user_message",
+                "value": "={{ $json.text }}",
+                "type": "string"
+              },
+              {
+                "id": "e4",
+                "name": "professor",
+                "value": "={{ $json.professor }}",
+                "type": "string"
+              },
+              {
+                "id": "e5",
+                "name": "coleta_step",
+                "value": "={{ $json.coleta_step }}",
+                "type": "string"
+              },
+              {
+                "id": "e6",
+                "name": "participant_type",
+                "value": "={{ $json.participant_type }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1488,
+          800
+        ],
+        "id": "c0dc4a4d-1d41-40a3-825b-7161a30d0169",
+        "name": "Entrada"
+      },
+      {
+        "parameters": {
+          "jsCode": "const msg = ($input.first().json.user_message || '').toLowerCase();\n\nconst sinais = ['tchau','flw','ate mais','valeu','obrigado','👍','👋','ok','oks','tudo bem','tmj'];\n\nconst encerrando = sinais.some(s => msg.includes(s));\n\nreturn [{\n  json: {\n    ...$input.first().json,\n    encerrando\n  }\n}];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1712,
+          800
+        ],
+        "id": "03daa888-c637-480b-8533-71ed1f7b2337",
+        "name": "Detecta Encerramento"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "SELECT nps, sugestao, objecoes, intent_matricula, nome \nFROM trial_feedback \nWHERE session_id = $1 \nLIMIT 1",
+          "options": {
+            "queryReplacement": "={{ [ $('Entrada').item.json.session_id ] }}"
+          }
+        },
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          1936,
+          800
+        ],
+        "id": "2b5ebe74-5de0-4560-8c08-81cd03d0c373",
+        "name": "Busca Estado",
+        "credentials": {
+          "postgres": {
+            "id": "Qu3wWADR0qH8hskO",
+            "name": "Postgres account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const entrada = $('Detecta Encerramento').first().json;\nconst estado  = $('Busca Estado').first().json;\n\nconst phone            = entrada.phone || '';\nconst session_id       = entrada.session_id || '';\nconst user_message     = entrada.user_message || '';\nconst professor        = entrada.professor || '';\nconst coleta_step      = entrada.coleta_step || 'q1';\nconst participant_type = entrada.participant_type || 'prospect';\nconst encerrando       = entrada.encerrando || false;\n\nif (!phone || !session_id) {\n  return [{ json: { error: 'phone e session_id sao obrigatorios' } }];\n}\n\nconst nps              = estado.nps !== undefined && estado.nps !== null ? estado.nps : null;\nconst sugestao         = estado.sugestao && estado.sugestao.trim() !== '' ? estado.sugestao.trim() : null;\nconst objecoes         = estado.objecoes && estado.objecoes.trim() !== '' ? estado.objecoes.trim() : null;\nconst intent_matricula = estado.intent_matricula !== undefined && estado.intent_matricula !== null ? estado.intent_matricula : null;\nconst nome             = estado.nome && estado.nome.trim() !== '' ? estado.nome.trim() : null;\n\nconst linha_nps  = nps !== null              ? 'NPS: ' + nps + '/10 - ENCERRADO'                                  : 'NPS: nao coletado';\nconst linha_sug  = sugestao                  ? 'Sugestao: \"' + sugestao + '\" - ENCERRADO'                         : 'Sugestao: nao coletada';\nconst linha_obj  = objecoes                  ? 'Objecao: \"' + objecoes + '\" - ENCERRADO'                          : 'Objecao: nao coletada';\nconst linha_int  = intent_matricula !== null ? 'Intencao: ' + (intent_matricula ? 'sim' : 'nao') + ' - ENCERRADO' : 'Intencao: nao coletada';\n\nconst faltando = [\n  nps === null             ? 'NPS (como avaliaria a experiencia de 0 a 10)' : null,\n  !sugestao                ? 'Sugestao (o que gostou ou mudaria)'           : null,\n  !objecoes                ? 'Objecao (alguma hesitacao sobre se matricular)' : null,\n  intent_matricula === null ? 'Intencao (pensa em se matricular?)'           : null\n].filter(Boolean);\n\nconst e_primeira_mensagem = faltando.length === 4;\n\nconst primeira_mensagem_fixa = nome\n  ? 'Oi, ' + nome + '! Sou o Bell, assistente da Academia Treno. Estou entrando em contato pra saber como foi sua aula experimental hoje. O que voce achou da experiencia?'\n  : 'Oi! Sou o Bell, assistente da Academia Treno. Estou entrando em contato pra saber como foi sua aula experimental hoje. O que voce achou da experiencia?';\n\nlet prompt_communicator = '';\n\nif (encerrando) {\n  prompt_communicator = 'Voce e o Bell, assistente da Academia Treno.\\n'\n    + 'O usuario sinalizou que quer encerrar a conversa.\\n'\n    + 'Encerre de forma calorosa e curta, desejando boa sorte nos treinos.\\n'\n    + 'Nao faca nenhuma pergunta.';\n} else {\n  const proximo_objetivo = faltando.length > 0\n    ? 'OBJETIVO DESTA MENSAGEM: Colete -- ' + faltando[0] + '.'\n    : 'OBJETIVO DESTA MENSAGEM: Todos os dados foram coletados. Encerre com mensagem calorosa e curta. Nao faca mais perguntas.';\n\n  prompt_communicator = 'Voce e o Bell, assistente da Academia Treno.\\n'\n    + (nome ? 'Voce esta conversando com ' + nome + '. Use o nome dele naturalmente uma vez no inicio, depois so se couber.\\n' : 'Voce esta conversando com alguem que fez uma aula experimental hoje.\\n')\n    + 'Seu papel e ter uma conversa genuina e humana, nao um formulario.\\n'\n    + '\\n'\n    + 'ESTADO CONFIRMADO DA CONVERSA:\\n'\n    + linha_nps + '\\n'\n    + linha_sug + '\\n'\n    + linha_obj + '\\n'\n    + linha_int + '\\n'\n    + '\\n'\n    + 'DADOS QUE AINDA FALTAM:\\n'\n    + (faltando.length > 0 ? faltando.join('\\n') : 'Nenhum - todos coletados') + '\\n'\n    + '\\n'\n    + 'REGRA ABSOLUTA: Nunca faca perguntas sobre eixos marcados como ENCERRADO.\\n'\n    + '\\n'\n    + proximo_objetivo + '\\n'\n    + '\\n'\n    + 'REGRA CRITICA:\\n'\n    + '- Cada mensagem deve conter APENAS UMA pergunta.\\n'\n    + '- Essa pergunta deve mapear para UM UNICO campo: NPS ou Sugestao ou Objecao ou Intencao.\\n'\n    + '- Nunca misture contexto anterior com a pergunta atual.\\n'\n    + '- Nunca faca perguntas compostas.\\n'\n    + '\\n'\n    + 'FORMATO OBRIGATORIO:\\n'\n    + '- 1 frase curta de contexto\\n'\n    + '- 1 pergunta direta\\n'\n    + '- Nada mais\\n'\n    + '- Se o objetivo for coletar Intencao, pergunte diretamente: voce pensa em se matricular?\\n'\n    + '- Se o objetivo for coletar Objecao, pergunte: tem algo que te impediria de se matricular?\\n'\n    + '\\n'\n    + 'TOM:\\n'\n    + '- Mensagens curtas. WhatsApp nao e e-mail.\\n'\n    + '- Caloroso, direto, humano.\\n'\n    + '- Maximo 1 emoji por mensagem.\\n'\n    + '- Nunca use: feedback, avaliacao, formulario, pesquisa, nota, pontuacao.\\n'\n    + '- Nunca pressione para matricula.\\n'\n    + '- Se o usuario mencionar preco ou planos, diga que a equipe da Treno vai entrar em contato. Nao ofereca valores.\\n';\n}\n\nconst prompt_extractor = 'Voce e um extrator de dados estruturados.\\n'\n  + '\\n'\n  + 'Analise a MENSAGEM DO USUARIO considerando o CONTEXTO da pergunta que o assistente acabou de fazer.\\n'\n  + 'Retorne APENAS um objeto JSON valido, sem texto antes ou depois, sem markdown.\\n'\n  + '\\n'\n  + 'ESTADO ATUAL DA COLETA:\\n'\n  + linha_nps + '\\n'\n  + linha_sug + '\\n'\n  + linha_obj + '\\n'\n  + linha_int + '\\n'\n  + '\\n'\n  + 'ULTIMA MENSAGEM DO ASSISTENTE:\\n'\n  + '__COMMUNICATOR_OUTPUT__\\n'\n  + '\\n'\n  + 'MENSAGEM DO USUARIO:\\n'\n  + '\"' + user_message + '\"\\n'\n  + '\\n'\n  + 'Regras de extracao:\\n'\n  + '- Use a mensagem do assistente para entender O QUE esta sendo respondido\\n'\n  + '- Se o assistente perguntou sobre NPS e o usuario respondeu um numero de 0 a 10 ou disse \"nota X\", extraia nps com esse numero\\n'\n  + '- Se o assistente perguntou sobre intencao de matricula e o usuario respondeu sim, extraia intent_matricula: true\\n'\n  + '- Se o assistente perguntou ESPECIFICAMENTE sobre matricula ou intencao de continuar e o usuario respondeu nao, extraia intent_matricula: false\\n'\n  + '- Para perguntas sobre receios, duvidas ou hesitacoes, NAO extraia intent_matricula\\n'\n  + '- Se a resposta for vaga mas positiva (foi legal, gostei, tudo bem), extraia como sugestao positiva\\n'\n  + '- Se o usuario disser nao, nao tenho, nenhuma, nao sei em resposta a pergunta sobre objecao ou hesitacao, extraia objecoes: \"nenhuma\"\\n'\n  + '- Se um campo ja esta ENCERRADO no estado atual, retorne null para ele\\n'\n  + '- Se um campo nao foi respondido nesta mensagem, retorne null\\n'\n  + '- NPS deve ser numero inteiro de 0 a 10, ou null\\n'\n  + '- intent_matricula deve ser true, false ou null\\n'\n  + '- sugestao e objecoes devem ser strings descritivas ou null\\n'\n  + '\\n'\n  + 'Retorne exatamente neste formato:\\n'\n  + '{\"nps\": <number|null>, \"sugestao\": <string|null>, \"objecoes\": <string|null>, \"intent_matricula\": <boolean|null>}';\n\nreturn [{\n  json: {\n    phone,\n    session_id,\n    user_message,\n    professor,\n    coleta_step,\n    participant_type,\n    encerrando,\n    prompt_communicator,\n    prompt_extractor,\n    estado_atual: { nps, sugestao, objecoes, intent_matricula },\n    faltando,\n    e_primeira_mensagem,\n    primeira_mensagem_fixa\n  }\n}];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2160,
+          800
+        ],
+        "id": "5ef2e9bd-6f17-4d0e-9588-e6cf38e09fe7",
+        "name": "Monta Prompts"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "if-primeira-001",
+                "leftValue": "={{ $json.e_primeira_mensagem }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2384,
+          800
+        ],
+        "id": "5439eecb-dd6d-416b-a45e-dc7a3bd9fdda",
+        "name": "E primeira mensagem?"
+      },
+      {
+        "parameters": {
+          "operation": "delete",
+          "key": "={{ $('Monta Prompts').item.json.phone }}"
+        },
+        "type": "n8n-nodes-base.redis",
+        "typeVersion": 1,
+        "position": [
+          2608,
+          720
+        ],
+        "id": "8b800996-2e33-4ee0-b95f-7a98707eff9f",
+        "name": "Limpa Redis",
+        "credentials": {
+          "redis": {
+            "id": "giRY6SDtOMsz4RYj",
+            "name": "Redis account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $('Monta Prompts').item.json.e_primeira_mensagem ? $('Monta Prompts').item.json.primeira_mensagem_fixa : $('Monta Prompts').item.json.user_message }}",
+          "options": {
+            "systemMessage": "={{ $('Monta Prompts').item.json.prompt_communicator }}"
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 2.2,
+        "position": [
+          2832,
+          800
+        ],
+        "id": "11890f1f-9427-474c-8c32-5596e2dd89eb",
+        "name": "Communicator"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "mode": "list",
+            "value": "gpt-4.1-mini"
+          },
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.2,
+        "position": [
+          2848,
+          1024
+        ],
+        "id": "59e13fbc-9d6e-4f3c-95d1-5d20fef33f26",
+        "name": "OpenAI Communicator",
+        "credentials": {
+          "openAiApi": {
+            "id": "rlKGVgBF4WeVR6x8",
+            "name": "OpenAi account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "sessionIdType": "customKey",
+          "sessionKey": "={{ $('Monta Prompts').item.json.phone }}"
+        },
+        "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+        "typeVersion": 1.5,
+        "position": [
+          2976,
+          1024
+        ],
+        "id": "ac4ebe09-2d36-4c00-bc81-1e468106ff3c",
+        "name": "Redis Chat Memory",
+        "credentials": {
+          "redis": {
+            "id": "giRY6SDtOMsz4RYj",
+            "name": "Redis account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "set-extractor-001",
+                "name": "prompt_extractor_final",
+                "value": "={{ $('Monta Prompts').item.json.prompt_extractor.replace('__COMMUNICATOR_OUTPUT__', $('Communicator').item.json.output) }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          3184,
+          800
+        ],
+        "id": "23557645-bdc7-4f3d-96b6-d96d63136d06",
+        "name": "Monta Prompt Extractor"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $json.prompt_extractor_final }}",
+          "messages": {
+            "messageValues": [
+              {
+                "type": "HumanMessagePromptTemplate",
+                "message": "={{ $json.prompt_extractor_final }}"
+              }
+            ]
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.chainLlm",
+        "typeVersion": 1.4,
+        "position": [
+          3408,
+          800
+        ],
+        "id": "fc1789ba-6f23-4dc4-856b-a4db20249ea2",
+        "name": "Extractor"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "mode": "list",
+            "value": "gpt-4.1-mini"
+          },
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.2,
+        "position": [
+          3488,
+          1024
+        ],
+        "id": "188e1a99-8a07-494e-b367-26356f227af1",
+        "name": "OpenAI Extractor",
+        "credentials": {
+          "openAiApi": {
+            "id": "rlKGVgBF4WeVR6x8",
+            "name": "OpenAi account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const estadoAtual = $('Monta Prompts').first().json.estado_atual;\nconst rawOutput   = $('Extractor').first().json.text || '';\n\nlet extraido = {};\ntry {\n  const clean = rawOutput.replace(/```json|```/g, '').trim();\n  extraido = JSON.parse(clean);\n} catch(e) {\n  extraido = {};\n}\n\nconst nps = (extraido.nps !== null && extraido.nps !== undefined)\n  ? extraido.nps\n  : estadoAtual.nps;\n\nconst sugestao = (extraido.sugestao !== null && extraido.sugestao !== undefined && extraido.sugestao !== '')\n  ? extraido.sugestao\n  : estadoAtual.sugestao;\n\nconst objecoes = (extraido.objecoes !== null && extraido.objecoes !== undefined && extraido.objecoes !== '')\n  ? extraido.objecoes\n  : estadoAtual.objecoes;\n\nconst intent_matricula = (extraido.intent_matricula !== null && extraido.intent_matricula !== undefined)\n  ? extraido.intent_matricula\n  : estadoAtual.intent_matricula;\n\nconst encerrando    = $('Monta Prompts').first().json.encerrando || false;\nconst faltando      = $('Monta Prompts').first().json.faltando || [];\nconst todos_coletados = encerrando || (\n  nps !== null &&\n  sugestao !== null &&\n  objecoes !== null &&\n  intent_matricula !== null\n);\n\nconst session_id = $('Monta Prompts').first().json.session_id;\n\nreturn [{\n  json: {\n    session_id,\n    nps,\n    sugestao,\n    objecoes,\n    intent_matricula,\n    todos_coletados\n  }\n}];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3760,
+          800
+        ],
+        "id": "76b22065-f9e1-4724-99e3-6e8dcc02a8d9",
+        "name": "Merge Estado"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE trial_feedback SET nps = $1, sugestao = $2, objecoes = $3, intent_matricula = $4, status_coleta = CASE WHEN $5 THEN 'concluida' ELSE 'parcial' END, finished_at = CASE WHEN $5 THEN NOW() ELSE NULL END, last_user_message = $6, last_user_message_at = NOW() WHERE session_id = $7",
+          "options": {
+            "queryReplacement": "={{ [ $json.nps, $json.sugestao, $json.objecoes, $json.intent_matricula, $json.todos_coletados, $('Monta Prompts').item.json.user_message, $json.session_id ] }}"
+          }
+        },
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          3984,
+          800
+        ],
+        "id": "0c711336-aee6-421d-9d9e-05f4211c01e8",
+        "name": "Atualiza Estado",
+        "credentials": {
+          "postgres": {
+            "id": "Qu3wWADR0qH8hskO",
+            "name": "Postgres account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://evo.heymax.fit/message/sendText/trenobell",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "7FE740D978BC-436B-BA12-55589F0A4037"
+              }
+            ]
+          },
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "number",
+                "value": "={{ $('Monta Prompts').item.json.phone }}"
+              },
+              {
+                "name": "text",
+                "value": "={{ $('Communicator').item.json.output }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          4208,
+          800
+        ],
+        "id": "1566403b-5e0a-443d-abf9-509b94db6b3f",
+        "name": "Envia WhatsApp"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE trial_feedback SET last_bot_message_at = NOW() WHERE session_id = $1",
+          "options": {
+            "queryReplacement": "={{ [ $('Monta Prompts').item.json.session_id ] }}"
+          }
+        },
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          4432,
+          800
+        ],
+        "id": "9c725fde-449b-4cdf-adde-1525f3894b08",
+        "name": "Atualiza Timestamps",
+        "credentials": {
+          "postgres": {
+            "id": "Qu3wWADR0qH8hskO",
+            "name": "Postgres account"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Execute Workflow Trigger": {
+        "main": [
+          [
+            {
+              "node": "Entrada",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Entrada": {
+        "main": [
+          [
+            {
+              "node": "Detecta Encerramento",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Detecta Encerramento": {
+        "main": [
+          [
+            {
+              "node": "Busca Estado",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Busca Estado": {
+        "main": [
+          [
+            {
+              "node": "Monta Prompts",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Monta Prompts": {
+        "main": [
+          [
+            {
+              "node": "E primeira mensagem?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "E primeira mensagem?": {
+        "main": [
+          [
+            {
+              "node": "Limpa Redis",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Communicator",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Limpa Redis": {
+        "main": [
+          [
+            {
+              "node": "Communicator",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Communicator": {
+        "main": [
+          [
+            {
+              "node": "Monta Prompt Extractor",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Monta Prompt Extractor": {
+        "main": [
+          [
+            {
+              "node": "Extractor",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extractor": {
+        "main": [
+          [
+            {
+              "node": "Merge Estado",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge Estado": {
+        "main": [
+          [
+            {
+              "node": "Atualiza Estado",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Atualiza Estado": {
+        "main": [
+          [
+            {
+              "node": "Envia WhatsApp",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Envia WhatsApp": {
+        "main": [
+          [
+            {
+              "node": "Atualiza Timestamps",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI Communicator": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Communicator",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Redis Chat Memory": {
+        "ai_memory": [
+          [
+            {
+              "node": "Communicator",
+              "type": "ai_memory",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI Extractor": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Extractor",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Mardo Carneiro",
+    "name": "Version 0cd68ed8",
+    "description": "",
+    "autosaved": true,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-03-24T20:38:25.253Z",
+        "id": 579,
+        "workflowId": "PxhQLYCW7R2BdwRf",
+        "versionId": "0cd68ed8-95f4-4086-9650-2af434411052",
+        "event": "activated",
+        "userId": "51879556-966c-42e5-bead-ed1162a850f8"
+      }
+    ]
+  }
+}
